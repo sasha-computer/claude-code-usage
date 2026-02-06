@@ -16,6 +16,21 @@ enum Formatters {
         return "\(minutes)m"
     }
     
+    static func resetDescription(_ resetsAt: Date) -> String {
+        let remaining = resetsAt.timeIntervalSince(Date())
+        guard remaining > 0 else { return "now" }
+        
+        if remaining < 24 * 3600 {
+            return "in \(timeRemaining(remaining))"
+        }
+        
+        let f = DateFormatter()
+        f.dateFormat = "MMM d a h:mm"
+        f.amSymbol = "AM"
+        f.pmSymbol = "PM"
+        return f.string(from: resetsAt)
+    }
+    
     static func relativeTime(_ date: Date) -> String {
         let seconds = Date().timeIntervalSince(date)
         if seconds < 10 { return "just now" }

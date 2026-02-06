@@ -126,10 +126,10 @@ struct UsageRow: View {
             }
             .frame(height: 6)
             
-            if let remaining = timeRemaining {
+            if let resetDate = resetsAt {
                 HStack {
                     Spacer()
-                    Text("Resets in \(Formatters.timeRemaining(remaining))")
+                    Text("Resets \(Formatters.resetDescription(resetDate))")
                         .font(.system(size: 9))
                         .foregroundStyle(.tertiary)
                 }
