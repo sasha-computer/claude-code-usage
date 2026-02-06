@@ -1,0 +1,8 @@
+.build/
+.swiftpm/
+CCUsage.app/
+CCUsage.zip
+*.xcodeproj/
+xcuserdata/
+.DS_Store
+.omc/
