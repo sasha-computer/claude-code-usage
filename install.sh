@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="jaehyunjang/ccusage"
+REPO="NewTurn2017/ccusage"
 APP_NAME="CCUsage"
 INSTALL_DIR="/Applications"
 TMP_DIR=$(mktemp -d)

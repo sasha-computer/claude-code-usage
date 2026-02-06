@@ -23,19 +23,19 @@ Minimal macOS menu bar app for real-time Claude Code usage monitoring.
 ### One-liner
 
 ```bash
-curl -sL https://raw.githubusercontent.com/jaehyunjang/ccusage/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/NewTurn2017/ccusage/main/install.sh | bash
 ```
 
 ### Download
 
-1. Download `CCUsage.zip` from [Releases](https://github.com/jaehyunjang/ccusage/releases/latest)
+1. Download `CCUsage.zip` from [Releases](https://github.com/NewTurn2017/ccusage/releases/latest)
 2. Unzip and move `CCUsage.app` to `/Applications`
 3. **Right-click → Open** (required once for unsigned apps)
 
 ### Build from source
 
 ```bash
-git clone https://github.com/jaehyunjang/ccusage.git
+git clone https://github.com/NewTurn2017/ccusage.git
 cd ccusage
 make install
 ```
