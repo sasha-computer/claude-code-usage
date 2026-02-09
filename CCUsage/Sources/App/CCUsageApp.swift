@@ -57,16 +57,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateStatusButton() {
         guard let button = statusItem.button else { return }
         
-        let percent = usageMonitor.fiveHourPercent
-        let status = usageMonitor.fiveHourStatus
+        button.image = nil
+        button.title = ""
         
-        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
-        if let img = NSImage(systemSymbolName: status.iconName, accessibilityDescription: "Usage") {
-            button.image = img.withSymbolConfiguration(config)
-            button.image?.isTemplate = true
-        }
+        let fiveH = Int(usageMonitor.fiveHourPercent.rounded())
+        let weekly = Int(usageMonitor.weeklyPercent.rounded())
         
-        button.title = " \(Formatters.percentage(percent))"
-        button.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        let line1 = "\(fiveH)%[5h]"
+        let line2 = "\(weekly)%[Wk]"
+        
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .medium)
+        let menuBarHeight: CGFloat = NSStatusBar.system.thickness
+        
+        let textField1 = NSTextField(labelWithString: line1)
+        textField1.font = font
+        textField1.alignment = .center
+        textField1.textColor = .headerTextColor
+        textField1.sizeToFit()
+        
+        let textField2 = NSTextField(labelWithString: line2)
+        textField2.font = font
+        textField2.alignment = .center
+        textField2.textColor = .headerTextColor
+        textField2.sizeToFit()
+        
+        let maxWidth = max(textField1.frame.width, textField2.frame.width) + 4
+        let lineHeight: CGFloat = 11
+        let totalTextHeight = lineHeight * 2
+        let topPadding = (menuBarHeight - totalTextHeight) / 2
+        
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: maxWidth, height: menuBarHeight))
+        
+        textField1.frame = NSRect(x: 0, y: menuBarHeight - topPadding - lineHeight, width: maxWidth, height: lineHeight)
+        textField2.frame = NSRect(x: 0, y: menuBarHeight - topPadding - lineHeight * 2, width: maxWidth, height: lineHeight)
+        
+        container.addSubview(textField1)
+        container.addSubview(textField2)
+        
+        button.subviews.forEach { $0.removeFromSuperview() }
+        button.addSubview(container)
+        button.frame = NSRect(x: button.frame.origin.x, y: button.frame.origin.y, width: maxWidth, height: menuBarHeight)
+        statusItem.length = maxWidth
     }
 }
