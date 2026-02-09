@@ -11,7 +11,7 @@ final class UsageMonitor: ObservableObject {
     @Published var weeklyResetsAt: Date?
     @Published var isLoading = false
     @Published var lastRefresh: Date?
-    @Published var hasError = false
+    @Published var error: UsageFetchError?
     
     private let api = ClaudeUsageAPI()
     private var timer: Timer?
@@ -41,17 +41,21 @@ final class UsageMonitor: ObservableObject {
         startAutoRefresh()
     }
     
+    var hasError: Bool { error != nil }
+    
     func refresh() async {
         isLoading = true
         
-        if let limits = await api.fetchUsage() {
+        let result = await api.fetchUsage()
+        switch result {
+        case .success(let limits):
             fiveHourPercent = limits.fiveHourPercent
             weeklyPercent = limits.weeklyPercent
             fiveHourResetsAt = limits.fiveHourResetsAt
             weeklyResetsAt = limits.weeklyResetsAt
-            hasError = false
-        } else {
-            hasError = true
+            error = nil
+        case .failure(let fetchError):
+            error = fetchError
         }
         
         lastRefresh = Date()

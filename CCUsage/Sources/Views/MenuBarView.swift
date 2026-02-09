@@ -53,11 +53,11 @@ struct MenuBarView: View {
                 status: monitor.weeklyStatus
             )
             
-            if monitor.hasError {
+            if let error = monitor.error {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 10))
-                    Text("Unable to fetch usage data")
+                    Text(error.localizedMessage)
                         .font(.system(size: 10))
                 }
                 .foregroundStyle(.secondary)

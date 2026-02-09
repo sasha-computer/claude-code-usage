@@ -7,23 +7,44 @@ struct RateLimits {
     let weeklyResetsAt: Date?
 }
 
+enum UsageFetchError: Error {
+    case noCredentials
+    case tokenRefreshFailed
+    case apiCallFailed
+    case parseFailed
+    
+    var localizedMessage: String {
+        switch self {
+        case .noCredentials:
+            return "Claude Code에 로그인하세요 (claude login)"
+        case .tokenRefreshFailed:
+            return "인증 만료 — claude login으로 재로그인하세요"
+        case .apiCallFailed:
+            return "API 연결 실패 — 네트워크를 확인하세요"
+        case .parseFailed:
+            return "API 응답을 처리할 수 없습니다"
+        }
+    }
+}
+
 final class ClaudeUsageAPI {
     
     private let apiURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
     private let tokenRefreshURL = URL(string: "https://platform.claude.com/v1/oauth/token")!
     private let oauthClientId = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
     
-    func fetchUsage() async -> RateLimits? {
-        guard var creds = getCredentials() else { return nil }
+    func fetchUsage() async -> Result<RateLimits, UsageFetchError> {
+        guard var creds = getCredentials() else { return .failure(.noCredentials) }
         
         if !isTokenValid(creds) {
             guard let refreshToken = creds.refreshToken,
-                  let refreshed = await refreshAccessToken(refreshToken) else { return nil }
+                  let refreshed = await refreshAccessToken(refreshToken) else { return .failure(.tokenRefreshFailed) }
             creds = refreshed
         }
         
-        guard let data = await callAPI(accessToken: creds.accessToken) else { return nil }
-        return parseResponse(data)
+        guard let data = await callAPI(accessToken: creds.accessToken) else { return .failure(.apiCallFailed) }
+        guard let limits = parseResponse(data) else { return .failure(.parseFailed) }
+        return .success(limits)
     }
     
     private struct OAuthCreds {
