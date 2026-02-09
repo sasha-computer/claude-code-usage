@@ -18,6 +18,8 @@
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>CCUsage</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSMinimumSystemVersion</key>

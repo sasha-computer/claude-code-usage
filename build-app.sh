@@ -16,6 +16,7 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 cp .build/apple/Products/Release/$APP_NAME "$MACOS_DIR/$APP_NAME"
 cp CCUsage/Sources/App/Info.plist "$CONTENTS_DIR/Info.plist"
+cp CCUsage/Sources/Resources/AppIcon.icns "$RESOURCES_DIR/AppIcon.icns"
 
 echo "APPL????" > "$CONTENTS_DIR/PkgInfo"
 

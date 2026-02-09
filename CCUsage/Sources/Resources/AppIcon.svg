@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="iconClip">
+      <rect width="1024" height="1024" rx="228" ry="228"/>
+    </clipPath>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="gaugeGrad" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="55%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.48" r="0.45">
+      <stop offset="0%" stop-color="#334155" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <linearGradient id="track" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="arcShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#22c55e" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#iconClip)">
+    <!-- Background -->
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <rect width="1024" height="1024" fill="url(#glow)"/>
+
+    <!-- Outer gauge track (270deg arc, open at bottom) -->
+    <circle cx="512" cy="512" r="340" fill="none" stroke="url(#track)" stroke-width="64"
+      stroke-linecap="round"
+      stroke-dasharray="1602 2136"
+      stroke-dashoffset="-267"
+      opacity="0.5"/>
+
+    <!-- Gauge colored arc (~70% of 270deg) -->
+    <circle cx="512" cy="512" r="340" fill="none" stroke="url(#gaugeGrad)" stroke-width="64"
+      stroke-linecap="round" filter="url(#arcShadow)"
+      stroke-dasharray="1121 2136"
+      stroke-dashoffset="-267"/>
+
+    <!-- Inner dark circle -->
+    <circle cx="512" cy="512" r="250" fill="#0f172a" opacity="0.8"/>
+    <circle cx="512" cy="512" r="250" fill="none" stroke="#1e293b" stroke-width="2" opacity="0.6"/>
+
+    <!-- "CC" monogram - large and centered -->
+    <text x="512" y="520" text-anchor="middle" dominant-baseline="middle"
+      font-family="-apple-system, SF Pro Display, Helvetica Neue, Arial, sans-serif"
+      font-size="240" font-weight="800" fill="#f1f5f9"
+      letter-spacing="-8">CC</text>
+  </g>
+</svg>
