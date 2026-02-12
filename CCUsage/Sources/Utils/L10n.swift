@@ -25,19 +25,23 @@ enum L10n {
     // MARK: - Current Language
     
     private static let languageKey = "appLanguage"
+    static let languageDidChange = Notification.Name("L10nLanguageDidChange")
+    
+    private static var _cached: Language = {
+        if let raw = UserDefaults.standard.string(forKey: languageKey),
+           let lang = Language(rawValue: raw) {
+            return lang
+        }
+        let preferred = Locale.preferredLanguages.first ?? "en"
+        return preferred.hasPrefix("ko") ? .ko : .en
+    }()
     
     static var current: Language {
-        get {
-            if let raw = UserDefaults.standard.string(forKey: languageKey),
-               let lang = Language(rawValue: raw) {
-                return lang
-            }
-            // Default to system language, fallback to English
-            let preferred = Locale.preferredLanguages.first ?? "en"
-            return preferred.hasPrefix("ko") ? .ko : .en
-        }
+        get { _cached }
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: languageKey)
+            _cached = newValue
+            NotificationCenter.default.post(name: languageDidChange, object: nil)
         }
     }
     
@@ -73,12 +77,7 @@ enum L10n {
     
     // MARK: - UI Labels
     
-    static var headerTitle: String {
-        switch current {
-        case .ko: return "Claude Code"
-        case .en: return "Claude Code"
-        }
-    }
+    static var headerTitle: String { "Claude Code" }
     
     static var fiveHourLabel: String {
         switch current {

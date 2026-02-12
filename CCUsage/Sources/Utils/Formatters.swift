@@ -26,6 +26,7 @@ enum Formatters {
         
         let f = DateFormatter()
         f.dateFormat = "MMM d a h:mm"
+        f.locale = Locale(identifier: L10n.current.rawValue)
         f.amSymbol = "AM"
         f.pmSymbol = "PM"
         return "\(L10n.resetsPrefix) \(f.string(from: resetsAt))"
