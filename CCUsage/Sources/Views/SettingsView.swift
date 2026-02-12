@@ -5,26 +5,26 @@ struct SettingsView: View {
     
     var body: some View {
         Form {
-            Section("Current Usage") {
-                LabeledContent("5-Hour Usage", value: Formatters.percentage(monitor.fiveHourPercent))
-                LabeledContent("Weekly Usage", value: Formatters.percentage(monitor.weeklyPercent))
+            Section(L10n.settingsCurrentUsage) {
+                LabeledContent(L10n.settingsFiveHourUsage, value: Formatters.percentage(monitor.fiveHourPercent))
+                LabeledContent(L10n.settingsWeeklyUsage, value: Formatters.percentage(monitor.weeklyPercent))
                 
                 if let reset = monitor.fiveHourResetsAt {
-                    LabeledContent("5-Hour Resets At", value: Formatters.fullTime(reset))
+                    LabeledContent(L10n.settingsFiveHourResets, value: Formatters.fullTime(reset))
                 }
                 if let reset = monitor.weeklyResetsAt {
-                    LabeledContent("Weekly Resets At", value: Formatters.fullTime(reset))
+                    LabeledContent(L10n.settingsWeeklyResets, value: Formatters.fullTime(reset))
                 }
             }
             
-            Section("Info") {
-                LabeledContent("Data Source", value: "Anthropic OAuth API")
-                LabeledContent("Refresh Interval", value: "30s")
-                LabeledContent("Auth", value: "macOS Keychain")
+            Section(L10n.settingsInfo) {
+                LabeledContent(L10n.settingsDataSource, value: "Anthropic OAuth API")
+                LabeledContent(L10n.settingsRefreshInterval, value: "30s")
+                LabeledContent(L10n.settingsAuth, value: "macOS Keychain")
             }
         }
         .formStyle(.grouped)
         .frame(width: 380, height: 300)
-        .navigationTitle("CCUsage Settings")
+        .navigationTitle(L10n.settingsTitle)
     }
 }

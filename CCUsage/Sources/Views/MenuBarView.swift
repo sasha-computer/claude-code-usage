@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var monitor: UsageMonitor
+    @State private var language = L10n.current
     
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +18,7 @@ struct MenuBarView: View {
     
     private var headerSection: some View {
         HStack {
-            Text("Claude Code")
+            Text(L10n.headerTitle)
                 .font(.system(size: 13, weight: .semibold))
             
             Spacer()
@@ -38,7 +39,7 @@ struct MenuBarView: View {
     private var usageSection: some View {
         VStack(spacing: 14) {
             UsageRow(
-                label: "5-Hour",
+                label: L10n.fiveHourLabel,
                 percent: monitor.fiveHourPercent,
                 resetsAt: monitor.fiveHourResetsAt,
                 timeRemaining: monitor.fiveHourTimeRemaining,
@@ -46,7 +47,7 @@ struct MenuBarView: View {
             )
             
             UsageRow(
-                label: "Weekly",
+                label: L10n.weeklyLabel,
                 percent: monitor.weeklyPercent,
                 resetsAt: monitor.weeklyResetsAt,
                 timeRemaining: monitor.weeklyTimeRemaining,
@@ -78,10 +79,27 @@ struct MenuBarView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
             
+            Button(action: {
+                let next = language.next
+                L10n.current = next
+                language = next
+            }) {
+                Text(language.label)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(.quaternary)
+                    )
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            
             Spacer()
             
             Button(action: { NSApplication.shared.terminate(nil) }) {
-                Text("Quit")
+                Text(L10n.quit)
                     .font(.system(size: 11))
             }
             .buttonStyle(.plain)
@@ -129,7 +147,7 @@ struct UsageRow: View {
             if let resetDate = resetsAt {
                 HStack {
                     Spacer()
-                    Text("Resets \(Formatters.resetDescription(resetDate))")
+                    Text(Formatters.resetDescription(resetDate))
                         .font(.system(size: 9))
                         .foregroundStyle(.tertiary)
                 }

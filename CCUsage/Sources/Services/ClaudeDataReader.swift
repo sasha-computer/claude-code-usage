@@ -16,13 +16,13 @@ enum UsageFetchError: Error {
     var localizedMessage: String {
         switch self {
         case .noCredentials:
-            return "Claude Code에 로그인하세요 (claude login)"
+            return L10n.errorNotLoggedIn
         case .tokenRefreshFailed:
-            return "인증 만료 — claude login으로 재로그인하세요"
+            return L10n.errorTokenExpired
         case .apiCallFailed:
-            return "API 연결 실패 — 네트워크를 확인하세요"
+            return L10n.errorConnectionFailed
         case .parseFailed:
-            return "API 응답을 처리할 수 없습니다"
+            return L10n.errorParseFailed
         }
     }
 }
