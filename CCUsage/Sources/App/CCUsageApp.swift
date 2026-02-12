@@ -57,46 +57,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateStatusButton() {
         guard let button = statusItem.button else { return }
         
+        button.subviews.forEach { $0.removeFromSuperview() }
         button.image = nil
-        button.title = ""
         
         let fiveH = Int(usageMonitor.fiveHourPercent.rounded())
         let weekly = Int(usageMonitor.weeklyPercent.rounded())
         
-        let line1 = "\(fiveH)%[5h]"
-        let line2 = "\(weekly)%[Wk]"
+        let fiveHColor = statusColor(for: usageMonitor.fiveHourPercent)
+        let weeklyColor = statusColor(for: usageMonitor.weeklyPercent)
         
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .medium)
-        let menuBarHeight: CGFloat = NSStatusBar.system.thickness
+        let text = NSMutableAttributedString()
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        let dimAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
         
-        let textField1 = NSTextField(labelWithString: line1)
-        textField1.font = font
-        textField1.alignment = .center
-        textField1.textColor = .headerTextColor
-        textField1.sizeToFit()
+        text.append(NSAttributedString(string: "5h ", attributes: dimAttrs))
+        text.append(NSAttributedString(string: "\(fiveH)%", attributes: [.font: font, .foregroundColor: fiveHColor]))
+        text.append(NSAttributedString(string: "  ", attributes: dimAttrs))
+        text.append(NSAttributedString(string: "7d ", attributes: dimAttrs))
+        text.append(NSAttributedString(string: "\(weekly)%", attributes: [.font: font, .foregroundColor: weeklyColor]))
         
-        let textField2 = NSTextField(labelWithString: line2)
-        textField2.font = font
-        textField2.alignment = .center
-        textField2.textColor = .headerTextColor
-        textField2.sizeToFit()
-        
-        let maxWidth = max(textField1.frame.width, textField2.frame.width) + 4
-        let lineHeight: CGFloat = 11
-        let totalTextHeight = lineHeight * 2
-        let topPadding = (menuBarHeight - totalTextHeight) / 2
-        
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: maxWidth, height: menuBarHeight))
-        
-        textField1.frame = NSRect(x: 0, y: menuBarHeight - topPadding - lineHeight, width: maxWidth, height: lineHeight)
-        textField2.frame = NSRect(x: 0, y: menuBarHeight - topPadding - lineHeight * 2, width: maxWidth, height: lineHeight)
-        
-        container.addSubview(textField1)
-        container.addSubview(textField2)
-        
-        button.subviews.forEach { $0.removeFromSuperview() }
-        button.addSubview(container)
-        button.frame = NSRect(x: button.frame.origin.x, y: button.frame.origin.y, width: maxWidth, height: menuBarHeight)
-        statusItem.length = maxWidth
+        button.attributedTitle = text
+        statusItem.length = NSStatusItem.variableLength
+    }
+    
+    private func statusColor(for percent: Double) -> NSColor {
+        if percent >= 90 { return .systemRed }
+        if percent >= 70 { return .systemOrange }
+        return .labelColor
     }
 }
