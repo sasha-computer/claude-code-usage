@@ -6,9 +6,9 @@ struct MenuBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerSection
-            Divider().padding(.horizontal, 12)
+            Divider().padding(.horizontal, 16)
             usageSection
-            Divider().padding(.horizontal, 12)
+            Divider().padding(.horizontal, 16)
             footerSection
         }
         .frame(width: 280)
@@ -36,7 +36,7 @@ struct MenuBarView: View {
     }
     
     private var usageSection: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             UsageRow(
                 label: L10n.fiveHourLabel,
                 percent: monitor.fiveHourPercent,
@@ -64,16 +64,20 @@ struct MenuBarView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
     
     private var footerSection: some View {
-        HStack {
+        HStack(spacing: 8) {
             Button(action: {
                 Task { await monitor.refresh() }
             }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 11))
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11))
+                    Text("Refresh")
+                        .font(.system(size: 11))
+                }
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -100,7 +104,7 @@ struct UsageRow: View {
     let status: UsageStatus
     
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 4) {
             HStack {
                 Text(label)
                     .font(.system(size: 11, weight: .medium))

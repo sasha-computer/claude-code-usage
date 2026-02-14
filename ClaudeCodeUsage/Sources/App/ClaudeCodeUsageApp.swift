@@ -20,10 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var cancellable: AnyCancellable?
+    private var eventMonitor: Any?
     
-    // Cache: avoid rebuilding attributed string when values haven't changed
-    private var lastFiveH: Int = -1
-    private var lastWeekly: Int = -1
     private let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
     
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -39,9 +37,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             button.action = #selector(togglePopover(_:))
             button.target = self
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
         
-        // Single pipeline: debounce rapid successive publishes, deduplicate, update
+        // Right-click context menu on status item
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Refresh", action: #selector(refreshUsage), keyEquivalent: "r")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit Claude Code Usage", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        statusItem.menu = nil // We handle left-click manually, right-click via menu
+        
+        // Global keyboard shortcuts when popover is visible
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self else { return event }
+            
+            // Only handle shortcuts when popover is shown
+            guard self.popover.isShown else { return event }
+            
+            if event.modifierFlags.contains(.command) {
+                switch event.charactersIgnoringModifiers {
+                case "r":
+                    self.refreshUsage()
+                    return nil
+                case ",":
+                    self.openSettings()
+                    return nil
+                case "q":
+                    NSApplication.shared.terminate(nil)
+                    return nil
+                case "w":
+                    self.popover.performClose(nil)
+                    return nil
+                default:
+                    break
+                }
+            }
+            
+            // Esc closes popover
+            if event.keyCode == 53 {
+                self.popover.performClose(nil)
+                return nil
+            }
+            
+            return event
+        }
+        
+        // Reactive status bar updates
         cancellable = usageMonitor.$fiveHourPercent
             .combineLatest(usageMonitor.$weeklyPercent)
             .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
@@ -55,11 +98,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func togglePopover(_ sender: AnyObject?) {
         guard let button = statusItem.button else { return }
         
+        let event = NSApp.currentEvent
+        
+        // Right-click: show context menu
+        if event?.type == .rightMouseUp {
+            let menu = NSMenu()
+            menu.addItem(withTitle: "Refresh", action: #selector(refreshUsage), keyEquivalent: "r")
+            menu.addItem(.separator())
+            menu.addItem(withTitle: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+            menu.addItem(.separator())
+            menu.addItem(withTitle: "Quit Claude Code Usage", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+            statusItem.menu = menu
+            button.performClick(nil)
+            // Clear menu so left-click goes back to popover
+            DispatchQueue.main.async { self.statusItem.menu = nil }
+            return
+        }
+        
+        // Left-click: toggle popover
         if popover.isShown {
             popover.performClose(sender)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+    
+    @objc private func refreshUsage() {
+        Task { await usageMonitor.refresh() }
+    }
+    
+    @objc private func openSettings() {
+        popover.performClose(nil)
+        // Open the Settings window
+        if #available(macOS 14.0, *) {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
     
