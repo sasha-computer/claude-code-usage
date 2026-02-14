@@ -2,7 +2,8 @@
   import { Copy, Check, Gauge, Clock, Eye, Shield } from 'lucide-svelte'
 
   let copied = $state(false)
-  const installCmd = 'curl -sL https://raw.githubusercontent.com/sasha-computer/claude-code-usage/main/install.sh | bash'
+  const installCmd = 'brew install --cask sasha-computer/tap/claude-code-usage'
+  const repoUrl = 'https://github.com/sasha-computer/claude-code-usage'
 
   function copyInstall() {
     navigator.clipboard.writeText(installCmd)
@@ -31,6 +32,13 @@
         {/if}
       </button>
     </div>
+    <p class="install-alt">or <a href="{repoUrl}/releases/latest">download the DMG</a></p>
+  </section>
+
+  <!-- Screenshots -->
+  <section class="screenshots">
+    <img src="/screenshot-light.png" alt="Light mode" class="screenshot" />
+    <img src="/screenshot-dark.png" alt="Dark mode" class="screenshot" />
   </section>
 
   <!-- Features -->
@@ -57,17 +65,16 @@
     </div>
   </section>
 
-  <!-- Menu bar preview -->
-  <section class="preview">
-    <div class="menubar-mock">
-      <span class="menubar-text"><span class="green">5h 12%</span>&nbsp;&nbsp;<span class="orange">7d 68%</span></span>
-    </div>
-    <p class="preview-caption">What it looks like in your menu bar</p>
-  </section>
-
   <!-- Footer -->
   <footer>
-    <a href="https://github.com/sasha-computer/claude-code-usage" class="github-link">GitHub</a>
+    <div class="footer-links">
+      <a href={repoUrl}>GitHub</a>
+      <span class="dot">·</span>
+      <a href="{repoUrl}/releases/latest">Releases</a>
+      <span class="dot">·</span>
+      <a href="{repoUrl}#building-from-source">Build from source</a>
+    </div>
+    <p class="footer-about">Built by <a href="https://github.com/sasha-computer">sasha</a>. MIT licensed. macOS 14+, Swift.</p>
   </footer>
 </main>
 
@@ -129,7 +136,7 @@
 
   .install-block code {
     font-family: var(--mono);
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: var(--fg);
     flex: 1;
     word-break: break-all;
@@ -155,12 +162,44 @@
     background: rgba(155, 125, 219, 0.1);
   }
 
+  .install-alt {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 12px;
+  }
+
+  .install-alt a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .install-alt a:hover {
+    text-decoration: underline;
+  }
+
+  /* Screenshots */
+  .screenshots {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 40px;
+    animation: fadeIn 0.8s ease 0.35s both;
+  }
+
+  .screenshot {
+    width: 48%;
+    max-width: 310px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
   /* Features */
   .features {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
-    margin-top: 48px;
+    margin-top: 40px;
     animation: fadeIn 0.8s ease 0.4s both;
   }
 
@@ -195,63 +234,47 @@
     line-height: 1.6;
   }
 
-  /* Menu bar preview */
-  .preview {
-    margin-top: 48px;
-    text-align: center;
-    animation: fadeIn 0.8s ease 0.5s both;
-  }
-
-  .menubar-mock {
-    display: inline-block;
-    background: #2a2a30;
-    border-radius: 8px;
-    padding: 10px 24px;
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    letter-spacing: 0.02em;
-  }
-
-  .menubar-text .green {
-    color: #4ade80;
-  }
-
-  .menubar-text .orange {
-    color: #fb923c;
-  }
-
-  .preview-caption {
-    color: var(--muted);
-    font-size: 0.8rem;
-    margin-top: 12px;
-  }
-
   /* Footer */
   footer {
     text-align: center;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-    color: var(--muted);
-    font-size: 0.85rem;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
     margin-top: 48px;
     padding-top: 24px;
     padding-bottom: 40px;
   }
 
-  footer a {
+  .footer-links {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+  }
+
+  .footer-links a {
     color: var(--accent);
     text-decoration: none;
   }
 
-  footer a:hover {
+  .footer-links a:hover {
     text-decoration: underline;
   }
 
-  .github-link {
-    font-family: var(--mono);
-    font-size: 0.8rem;
+  .dot {
+    color: var(--muted);
+    margin: 0 8px;
+  }
+
+  .footer-about {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .footer-about a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .footer-about a:hover {
+    text-decoration: underline;
   }
 
   /* Animation */
@@ -268,6 +291,16 @@
 
     .features {
       grid-template-columns: 1fr;
+    }
+
+    .screenshots {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .screenshot {
+      width: 90%;
+      max-width: none;
     }
   }
 </style>
