@@ -1,85 +1,84 @@
-# CCUsage
+<p align="center">
+  <img src="assets/hero.png" alt="Claude Code Usage" width="200" />
+</p>
 
-Claude Code 사용량을 macOS 메뉴바에서 실시간으로 모니터링하는 미니멀 앱입니다.
+<h1 align="center">Claude Code Usage</h1>
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-blue) ![Swift](https://img.shields.io/badge/Swift-5.9-orange) ![License](https://img.shields.io/badge/License-MIT-green)
+<p align="center">
+  See your Claude Code rate limits in the macOS menu bar. Always.
+</p>
 
-## 주요 기능
+<p align="center">
+  <a href="#installation">Installation</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#usage">Usage</a> ·
+  <a href="#building-from-source">Building from source</a>
+</p>
 
-- **5시간 / 주간** 사용량을 메뉴바에서 퍼센트로 실시간 표시
-- 색상으로 상태 구분: 🟢 정상 → 🟠 70% 이상 → 🔴 90% 이상
-- 리셋까지 남은 시간 표시 (24시간 초과 시 정확한 날짜/시간으로 표시)
-- 30초마다 자동 갱신
-- 설정 불필요 — Claude Code 로그인 정보를 자동으로 읽음
+## Why?
 
-## 사전 조건
+You're deep in a coding session and Claude Code suddenly tells you you've hit your rate limit. You had no idea you were close. Now you're stuck waiting for the reset with no visibility into when it actually happens.
 
-- **macOS 14 (Sonoma)** 이상
-- **Claude Code CLI**가 설치되어 있고 로그인된 상태
-- Claude Code 구독 (Pro / Max5 / Max20)
+**Claude Code Usage fixes this.** It sits in your menu bar and shows your 5-hour and weekly usage as percentages, color-coded so you can see at a glance how close you are to the limit. No surprises.
 
-> Claude Code CLI에 로그인하면 macOS 키체인에 인증 정보가 자동 저장됩니다.  
-> CCUsage는 이 정보를 읽어 Anthropic API에서 사용량을 조회합니다.
+## How it works
 
----
+- Shows **5-hour** and **weekly** usage percentages in the menu bar
+- Color-coded: green (normal), orange (70%+), red (90%+)
+- Click the menu bar item for detailed usage breakdown and reset times
+- Refreshes every 30 seconds, reads credentials from the macOS Keychain
+- English and Korean language support (KO/EN toggle)
+- Zero config. If you're logged into Claude Code, it just works.
 
-## 설치 방법
+## Installation
 
-### 방법 1: 터미널 한 줄로 설치 (권장)
-
-터미널을 열고 아래 명령어를 붙여넣으세요:
+### One-liner (recommended)
 
 ```bash
-curl -sL https://raw.githubusercontent.com/NewTurn2017/ccusage/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/sasha-computer/claude-code-usage/main/install.sh | bash
 ```
 
-자동으로 최신 버전을 다운로드하고 `/Applications`에 설치합니다.
+Downloads the latest release and installs to `/Applications`.
 
-### 방법 2: 직접 다운로드
+### Manual download
 
-1. [Releases 페이지](https://github.com/NewTurn2017/ccusage/releases/latest)에서 `CCUsage.zip` 다운로드
-2. 압축 해제
-3. `CCUsage.app`을 `/Applications` (응용 프로그램) 폴더로 이동
-4. **처음 실행 시**: `CCUsage.app`을 **우클릭 → 열기** 클릭  
-   (서명되지 않은 앱이므로 최초 1회만 이 과정이 필요합니다)
+1. Grab `CCUsage.zip` from the [latest release](https://github.com/sasha-computer/claude-code-usage/releases/latest)
+2. Unzip and move `CCUsage.app` to `/Applications`
+3. First launch: right-click the app and select Open (one-time gate for unsigned apps)
 
-### 방법 3: 소스에서 직접 빌드
+## Usage
 
-Xcode Command Line Tools가 설치되어 있어야 합니다.
+Launch the app. That's it.
+
+The menu bar shows `5h 12%  7d 34%` (or whatever your current usage is). Click it to see:
+
+- Exact percentages for both windows
+- Reset countdown timers
+- A refresh button if you want to check right now
+
+### Requirements
+
+- macOS 14 (Sonoma) or later
+- Claude Code CLI installed and logged in
+- An active Claude Code subscription (Pro, Max5, or Max20)
+
+The app reads your OAuth credentials from the macOS Keychain (where Claude Code stores them) and calls the Anthropic usage API directly. It never sends data anywhere else.
+
+## Building from source
 
 ```bash
-# 1. 소스 코드 다운로드
-git clone https://github.com/NewTurn2017/ccusage.git
-cd ccusage
-
-# 2. 빌드 + /Applications에 설치 + 자동 실행
+git clone https://github.com/sasha-computer/claude-code-usage.git
+cd claude-code-usage
 make install
 ```
 
----
+This builds a universal binary (arm64 + x86_64), copies it to `/Applications`, and launches it.
 
-## 사용법
+Other make targets: `make build` (build only), `make clean`, `make uninstall`.
 
-설치 후 앱을 실행하면 메뉴바 오른쪽에 게이지 아이콘과 사용량 퍼센트가 나타납니다.
+## Credits
 
-**아이콘 클릭** → 상세 사용량 팝오버:
-- **5-Hour**: 5시간 롤링 윈도우 사용량 및 리셋 시간
-- **Weekly**: 주간 사용량 및 리셋 시간
-
-## 작동 원리
-
-CCUsage는 macOS 키체인(`Claude Code-credentials`)에서 OAuth 인증 정보를 읽고, Anthropic 공식 API(`api.anthropic.com/api/oauth/usage`)를 호출하여 실시간 사용률을 조회합니다.
-
-**개인정보**: Anthropic 공식 API 외에 어떤 곳에도 데이터를 전송하거나 저장하지 않습니다.
-
-## 삭제
-
-```bash
-# 소스에서 빌드한 경우
-make uninstall
-```
-
-또는 `/Applications`에서 `CCUsage.app`을 휴지통으로 이동하면 됩니다.
+Originally forked from [NewTurn2017/ccusage](https://github.com/NewTurn2017/ccusage). This fork is more actively maintained and includes English language support, a token refresh bug fix that prevented Claude Code from getting logged out, and a productionized README.
 
 ## License
 
