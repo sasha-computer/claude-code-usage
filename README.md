@@ -9,6 +9,12 @@
 </p>
 
 <p align="center">
+  <img src="assets/screenshot-light.png" alt="Light mode" width="360" />
+  &nbsp;&nbsp;
+  <img src="assets/screenshot-dark.png" alt="Dark mode" width="360" />
+</p>
+
+<p align="center">
   <a href="#installation">Installation</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#usage">Usage</a> ·
