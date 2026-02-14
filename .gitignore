@@ -6,3 +6,4 @@ CCUsage.zip
 xcuserdata/
 .DS_Store
 .omc/
+node_modules/
