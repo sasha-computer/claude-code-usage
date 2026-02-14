@@ -2,10 +2,15 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var monitor: UsageMonitor
+    @ObservedObject var updateChecker = UpdateChecker.shared
     
     var body: some View {
         VStack(spacing: 0) {
             headerSection
+            if updateChecker.updateAvailable {
+                Divider().padding(.horizontal, 16)
+                updateBanner
+            }
             Divider().padding(.horizontal, 16)
             usageSection
             Divider().padding(.horizontal, 16)
@@ -13,6 +18,41 @@ struct MenuBarView: View {
         }
         .frame(width: 280)
         .padding(.vertical, 8)
+    }
+    
+    private var updateBanner: some View {
+        Button(action: { updateChecker.openDownload() }) {
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
+                    .background(
+                        Circle()
+                            .fill(.blue)
+                            .frame(width: 18, height: 18)
+                    )
+                
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Update Available")
+                        .font(.system(size: 11, weight: .semibold))
+                    if let version = updateChecker.latestVersion {
+                        Text("v\(version)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
     
     private var headerSection: some View {

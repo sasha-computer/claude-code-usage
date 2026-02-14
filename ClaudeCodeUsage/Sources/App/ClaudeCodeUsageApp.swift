@@ -17,9 +17,11 @@ struct ClaudeCodeUsageApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let usageMonitor = UsageMonitor()
+    let updateChecker = UpdateChecker.shared
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var cancellable: AnyCancellable?
+    private var updateCancellable: AnyCancellable?
     private var eventMonitor: Any?
     
     private let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
@@ -93,6 +95,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] fiveH, weekly in
                 self?.updateStatusButton(fiveH: fiveH, weekly: weekly)
             }
+        
+        // Auto-check for updates on launch
+        updateChecker.startIfEnabled()
+        
+        // Show the native update alert when an update is found (auto-check only)
+        updateCancellable = updateChecker.$updateAvailable
+            .dropFirst() // Skip initial value
+            .filter { $0 }
+            .sink { [weak self] _ in
+                self?.showUpdateAlert()
+            }
     }
     
     @objc private func togglePopover(_ sender: AnyObject?) {
@@ -104,6 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if event?.type == .rightMouseUp {
             let menu = NSMenu()
             menu.addItem(withTitle: "Refresh", action: #selector(refreshUsage), keyEquivalent: "r")
+            menu.addItem(withTitle: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "u")
             menu.addItem(.separator())
             menu.addItem(withTitle: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
             menu.addItem(.separator())
@@ -126,6 +140,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func refreshUsage() {
         Task { await usageMonitor.refresh() }
+    }
+    
+    @objc private func checkForUpdates() {
+        Task {
+            await updateChecker.checkForUpdates(userInitiated: true)
+            if updateChecker.updateAvailable {
+                showUpdateAlert()
+            } else {
+                UpdateAlert.showUpToDate(currentVersion: updateChecker.currentVersion)
+            }
+        }
+    }
+    
+    private func showUpdateAlert() {
+        guard let version = updateChecker.latestVersion else { return }
+        popover.performClose(nil)
+        UpdateAlert.show(
+            currentVersion: updateChecker.currentVersion,
+            newVersion: version,
+            releaseNotes: updateChecker.releaseNotes,
+            onDownload: { [weak self] in self?.updateChecker.openDownload() },
+            onSkip: { [weak self] in self?.updateChecker.skipVersion() },
+            onLater: { [weak self] in self?.updateChecker.dismiss() }
+        )
     }
     
     @objc private func openSettings() {

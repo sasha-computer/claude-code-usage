@@ -38,8 +38,17 @@ enum L10n {
     static let settingsWeeklyUsage = "Weekly Usage"
     static let settingsFiveHourResets = "5-Hour Resets At"
     static let settingsWeeklyResets = "Weekly Resets At"
+    static let settingsUpdates = "Updates"
+    static let settingsCheckAutomatically = "Check for updates automatically"
+    static let settingsCheckNow = "Check Now"
+    static let settingsLastChecked = "Last Checked"
+    static let settingsVersion = "Version"
     static let settingsInfo = "Info"
     static let settingsDataSource = "Data Source"
     static let settingsRefreshInterval = "Refresh Interval"
     static let settingsAuth = "Auth"
+    
+    static func settingsUpToDate(_ version: String) -> String {
+        "Up to date (v\(version))"
+    }
 }
