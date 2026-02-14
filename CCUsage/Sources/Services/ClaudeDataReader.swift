@@ -40,6 +40,8 @@ final class ClaudeUsageAPI {
             guard let refreshToken = creds.refreshToken,
                   let refreshed = await refreshAccessToken(refreshToken) else { return .failure(.tokenRefreshFailed) }
             creds = refreshed
+            // Write refreshed tokens back so Claude Code stays authenticated
+            saveCredentials(creds)
         }
         
         guard let data = await callAPI(accessToken: creds.accessToken) else { return .failure(.apiCallFailed) }
@@ -105,6 +107,70 @@ final class ClaudeUsageAPI {
             expiresAt: creds["expiresAt"] as? TimeInterval,
             refreshToken: creds["refreshToken"] as? String
         )
+    }
+    
+    private func saveCredentials(_ creds: OAuthCreds) {
+        // Read existing keychain JSON, update the OAuth fields, write it back.
+        // This keeps Claude Code's session alive after a token refresh.
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        task.arguments = ["find-generic-password", "-s", "Claude Code-credentials", "-w"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            guard task.terminationStatus == 0 else { return }
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let json = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !json.isEmpty,
+                  let jsonData = json.data(using: .utf8),
+                  var parsed = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else { return }
+            
+            // Update the claudeAiOauth sub-object (or top-level if flat)
+            let key = parsed["claudeAiOauth"] != nil ? "claudeAiOauth" : nil
+            var oauthDict = (key.flatMap { parsed[$0] as? [String: Any] }) ?? parsed
+            
+            oauthDict["accessToken"] = creds.accessToken
+            if let expiresAt = creds.expiresAt {
+                oauthDict["expiresAt"] = expiresAt
+            }
+            if let refreshToken = creds.refreshToken {
+                oauthDict["refreshToken"] = refreshToken
+            }
+            
+            if let key = key {
+                parsed[key] = oauthDict
+            } else {
+                parsed = oauthDict
+            }
+            
+            guard let updatedData = try? JSONSerialization.data(withJSONObject: parsed),
+                  let updatedJson = String(data: updatedData, encoding: .utf8) else { return }
+            
+            // Delete old entry and add updated one
+            let delTask = Process()
+            delTask.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+            delTask.arguments = ["delete-generic-password", "-s", "Claude Code-credentials"]
+            delTask.standardOutput = FileHandle.nullDevice
+            delTask.standardError = FileHandle.nullDevice
+            try? delTask.run()
+            delTask.waitUntilExit()
+            
+            let addTask = Process()
+            addTask.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+            addTask.arguments = ["add-generic-password", "-s", "Claude Code-credentials", "-w", updatedJson, "-U"]
+            addTask.standardOutput = FileHandle.nullDevice
+            addTask.standardError = FileHandle.nullDevice
+            try? addTask.run()
+            addTask.waitUntilExit()
+        } catch {
+            // Silently fail — worst case is the old behavior
+        }
     }
     
     private func isTokenValid(_ creds: OAuthCreds) -> Bool {
