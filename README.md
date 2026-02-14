@@ -32,6 +32,7 @@ You're deep in a coding session and Claude Code suddenly tells you you've hit yo
 - Shows **5-hour** and **weekly** usage percentages in the menu bar
 - Color-coded: green (normal), orange (70%+), red (90%+)
 - Click the menu bar item for detailed usage breakdown and reset times
+- **Automatic update checking** -- notifies you when a new version is available with a standard macOS update dialog. Skip, remind later, or install with one click.
 - Refreshes every 30 seconds, reads credentials from the macOS Keychain
 - Zero config. If you're logged into Claude Code, it just works.
 
