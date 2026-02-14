@@ -64,11 +64,15 @@ final class UsageMonitor: ObservableObject {
     
     func startAutoRefresh() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+        let t = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refresh()
             }
         }
+        // Let macOS coalesce this timer with other system wakeups to save energy.
+        // Usage data doesn't need sub-second precision -- 10s of slack is fine.
+        t.tolerance = 10
+        timer = t
     }
 }
 
