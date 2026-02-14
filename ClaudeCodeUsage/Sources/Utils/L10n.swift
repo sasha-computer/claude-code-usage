@@ -1,211 +1,45 @@
 import Foundation
 
-enum Language: String, CaseIterable {
-    case ko = "ko"
-    case en = "en"
-    
-    var label: String {
-        switch self {
-        case .ko: return "KO"
-        case .en: return "EN"
-        }
-    }
-    
-    /// Returns the next language in the cycle
-    var next: Language {
-        switch self {
-        case .ko: return .en
-        case .en: return .ko
-        }
-    }
-}
-
 enum L10n {
-    
-    // MARK: - Current Language
-    
-    private static let languageKey = "appLanguage"
-    static let languageDidChange = Notification.Name("L10nLanguageDidChange")
-    
-    private static var _cached: Language = {
-        if let raw = UserDefaults.standard.string(forKey: languageKey),
-           let lang = Language(rawValue: raw) {
-            return lang
-        }
-        let preferred = Locale.preferredLanguages.first ?? "en"
-        return preferred.hasPrefix("ko") ? .ko : .en
-    }()
-    
-    static var current: Language {
-        get { _cached }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: languageKey)
-            _cached = newValue
-            NotificationCenter.default.post(name: languageDidChange, object: nil)
-        }
-    }
     
     // MARK: - Error Messages
     
-    static var errorNotLoggedIn: String {
-        switch current {
-        case .ko: return "Claude Code에 로그인하세요 (claude login)"
-        case .en: return "Not logged in — run claude login"
-        }
-    }
-    
-    static var errorTokenExpired: String {
-        switch current {
-        case .ko: return "인증 만료 — claude login으로 재로그인하세요"
-        case .en: return "Token expired — run claude login to re-authenticate"
-        }
-    }
-    
-    static var errorConnectionFailed: String {
-        switch current {
-        case .ko: return "API 연결 실패 — 네트워크를 확인하세요"
-        case .en: return "API connection failed — check your network"
-        }
-    }
-    
-    static var errorParseFailed: String {
-        switch current {
-        case .ko: return "API 응답을 처리할 수 없습니다"
-        case .en: return "Failed to parse API response"
-        }
-    }
+    static let errorNotLoggedIn = "Not logged in -- run claude login"
+    static let errorTokenExpired = "Token expired -- run claude login to re-authenticate"
+    static let errorConnectionFailed = "API connection failed -- check your network"
+    static let errorParseFailed = "Failed to parse API response"
     
     // MARK: - UI Labels
     
-    static var headerTitle: String { "Claude Code" }
-    
-    static var fiveHourLabel: String {
-        switch current {
-        case .ko: return "5시간"
-        case .en: return "5-Hour"
-        }
-    }
-    
-    static var weeklyLabel: String {
-        switch current {
-        case .ko: return "주간"
-        case .en: return "Weekly"
-        }
-    }
-    
-    static var resetsPrefix: String {
-        switch current {
-        case .ko: return "초기화"
-        case .en: return "Resets"
-        }
-    }
-    
-    static var quit: String {
-        switch current {
-        case .ko: return "종료"
-        case .en: return "Quit"
-        }
-    }
+    static let headerTitle = "Claude Code"
+    static let fiveHourLabel = "5-Hour"
+    static let weeklyLabel = "Weekly"
+    static let resetsPrefix = "Resets"
+    static let quit = "Quit"
     
     // MARK: - Time Formatting
     
-    static var now: String {
-        switch current {
-        case .ko: return "지금"
-        case .en: return "now"
-        }
-    }
+    static let now = "now"
+    static let justNow = "just now"
     
     static func timeAgo(_ value: String) -> String {
-        switch current {
-        case .ko: return "\(value) 전"
-        case .en: return "\(value) ago"
-        }
-    }
-    
-    static var justNow: String {
-        switch current {
-        case .ko: return "방금"
-        case .en: return "just now"
-        }
+        "\(value) ago"
     }
     
     static func resetsIn(_ time: String) -> String {
-        switch current {
-        case .ko: return "\(resetsPrefix) \(time) 후"
-        case .en: return "\(resetsPrefix) in \(time)"
-        }
+        "\(resetsPrefix) in \(time)"
     }
     
     // MARK: - Settings
     
-    static var settingsTitle: String {
-        switch current {
-        case .ko: return "Claude Code Usage 설정"
-        case .en: return "Claude Code Usage Settings"
-        }
-    }
-    
-    static var settingsCurrentUsage: String {
-        switch current {
-        case .ko: return "현재 사용량"
-        case .en: return "Current Usage"
-        }
-    }
-    
-    static var settingsFiveHourUsage: String {
-        switch current {
-        case .ko: return "5시간 사용량"
-        case .en: return "5-Hour Usage"
-        }
-    }
-    
-    static var settingsWeeklyUsage: String {
-        switch current {
-        case .ko: return "주간 사용량"
-        case .en: return "Weekly Usage"
-        }
-    }
-    
-    static var settingsFiveHourResets: String {
-        switch current {
-        case .ko: return "5시간 초기화"
-        case .en: return "5-Hour Resets At"
-        }
-    }
-    
-    static var settingsWeeklyResets: String {
-        switch current {
-        case .ko: return "주간 초기화"
-        case .en: return "Weekly Resets At"
-        }
-    }
-    
-    static var settingsInfo: String {
-        switch current {
-        case .ko: return "정보"
-        case .en: return "Info"
-        }
-    }
-    
-    static var settingsDataSource: String {
-        switch current {
-        case .ko: return "데이터 소스"
-        case .en: return "Data Source"
-        }
-    }
-    
-    static var settingsRefreshInterval: String {
-        switch current {
-        case .ko: return "갱신 주기"
-        case .en: return "Refresh Interval"
-        }
-    }
-    
-    static var settingsAuth: String {
-        switch current {
-        case .ko: return "인증"
-        case .en: return "Auth"
-        }
-    }
+    static let settingsTitle = "Claude Code Usage Settings"
+    static let settingsCurrentUsage = "Current Usage"
+    static let settingsFiveHourUsage = "5-Hour Usage"
+    static let settingsWeeklyUsage = "Weekly Usage"
+    static let settingsFiveHourResets = "5-Hour Resets At"
+    static let settingsWeeklyResets = "Weekly Resets At"
+    static let settingsInfo = "Info"
+    static let settingsDataSource = "Data Source"
+    static let settingsRefreshInterval = "Refresh Interval"
+    static let settingsAuth = "Auth"
 }

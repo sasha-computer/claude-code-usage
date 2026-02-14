@@ -27,7 +27,6 @@ You're deep in a coding session and Claude Code suddenly tells you you've hit yo
 - Color-coded: green (normal), orange (70%+), red (90%+)
 - Click the menu bar item for detailed usage breakdown and reset times
 - Refreshes every 30 seconds, reads credentials from the macOS Keychain
-- English and Korean language support (KO/EN toggle)
 - Zero config. If you're logged into Claude Code, it just works.
 
 ## Installation

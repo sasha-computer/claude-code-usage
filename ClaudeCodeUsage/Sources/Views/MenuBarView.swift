@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var monitor: UsageMonitor
-    @State private var language = L10n.current
     
     var body: some View {
         VStack(spacing: 0) {
@@ -75,23 +74,6 @@ struct MenuBarView: View {
             }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 11))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            
-            Button(action: {
-                let next = language.next
-                L10n.current = next
-                language = next
-            }) {
-                Text(language.label)
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(.quaternary)
-                    )
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)

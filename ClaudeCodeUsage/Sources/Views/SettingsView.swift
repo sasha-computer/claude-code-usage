@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var monitor: UsageMonitor
-    @State private var language = L10n.current
     
     var body: some View {
         Form {
@@ -27,9 +26,5 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 380, height: 300)
         .navigationTitle(L10n.settingsTitle)
-        .id(language)
-        .onReceive(NotificationCenter.default.publisher(for: L10n.languageDidChange)) { _ in
-            language = L10n.current
-        }
     }
 }
