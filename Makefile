@@ -1,4 +1,4 @@
-.PHONY: build install uninstall clean release dmg bump-tap
+.PHONY: build install uninstall clean release dmg bump-tap deploy-frontend
 
 APP_NAME = ClaudeCodeUsage
 INSTALL_DIR = /Applications
@@ -43,6 +43,9 @@ release:
 	@$(MAKE) bump-tap v=$(v)
 	@rm -f $(APP_NAME).dmg
 	@echo "Released v$(v)"
+
+deploy-frontend:
+	cd frontend && bun run build && railway up -d
 
 bump-tap:
 	@if [ -z "$(v)" ]; then echo "Usage: make bump-tap v=1.0.0"; exit 1; fi
