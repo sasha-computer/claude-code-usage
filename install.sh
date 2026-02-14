@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="NewTurn2017/ccusage"
+REPO="sasha-computer/claude-code-usage"
 APP_NAME="CCUsage"
 INSTALL_DIR="/Applications"
 TMP_DIR=$(mktemp -d)
