@@ -2,7 +2,7 @@
 set -e
 
 REPO="sasha-computer/claude-code-usage"
-APP_NAME="CCUsage"
+APP_NAME="ClaudeCodeUsage"
 INSTALL_DIR="/Applications"
 TMP_DIR=$(mktemp -d)
 

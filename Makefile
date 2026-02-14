@@ -1,6 +1,6 @@
 .PHONY: build install uninstall clean release
 
-APP_NAME = CCUsage
+APP_NAME = ClaudeCodeUsage
 INSTALL_DIR = /Applications
 VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
 
@@ -24,8 +24,8 @@ clean:
 release:
 	@if [ -z "$(v)" ]; then echo "Usage: make release v=1.0.0"; exit 1; fi
 	@echo "Releasing v$(v)..."
-	@sed -i '' 's|<string>[0-9]*\.[0-9]*\.[0-9]*</string>|<string>$(v)</string>|g' CCUsage/Sources/App/Info.plist
-	@git add CCUsage/Sources/App/Info.plist
+	@sed -i '' 's|<string>[0-9]*\.[0-9]*\.[0-9]*</string>|<string>$(v)</string>|g' ClaudeCodeUsage/Sources/App/Info.plist
+	@git add ClaudeCodeUsage/Sources/App/Info.plist
 	@git commit -m "release: v$(v)"
 	@git tag v$(v)
 	@git push && git push origin v$(v)

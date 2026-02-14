@@ -1,7 +1,7 @@
 .build/
 .swiftpm/
-CCUsage.app/
-CCUsage.zip
+ClaudeCodeUsage.app/
+ClaudeCodeUsage.zip
 *.xcodeproj/
 xcuserdata/
 .DS_Store

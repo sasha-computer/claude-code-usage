@@ -216,7 +216,7 @@ final class ClaudeUsageAPI {
         return data
     }
     
-    private func parseResponse(_ data: Data) -> RateLimits? {
+    func parseResponse(_ data: Data) -> RateLimits? {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         
         let fiveHour = json["five_hour"] as? [String: Any]

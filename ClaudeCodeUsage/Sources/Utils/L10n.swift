@@ -141,8 +141,8 @@ enum L10n {
     
     static var settingsTitle: String {
         switch current {
-        case .ko: return "CCUsage 설정"
-        case .en: return "CCUsage Settings"
+        case .ko: return "Claude Code Usage 설정"
+        case .en: return "Claude Code Usage Settings"
         }
     }
     

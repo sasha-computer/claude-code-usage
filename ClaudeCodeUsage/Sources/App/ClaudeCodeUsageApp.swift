@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 @main
-struct CCUsageApp: App {
+struct ClaudeCodeUsageApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {

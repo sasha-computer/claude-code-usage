@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-APP_NAME="CCUsage"
+APP_NAME="ClaudeCodeUsage"
 BUNDLE_DIR="$APP_NAME.app"
 CONTENTS_DIR="$BUNDLE_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -15,8 +15,8 @@ rm -rf "$BUNDLE_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 cp .build/arm64-apple-macosx/release/$APP_NAME "$MACOS_DIR/$APP_NAME"
-cp CCUsage/Sources/App/Info.plist "$CONTENTS_DIR/Info.plist"
-cp CCUsage/Sources/Resources/AppIcon.icns "$RESOURCES_DIR/AppIcon.icns"
+cp ClaudeCodeUsage/Sources/App/Info.plist "$CONTENTS_DIR/Info.plist"
+cp ClaudeCodeUsage/Sources/Resources/AppIcon.icns "$RESOURCES_DIR/AppIcon.icns"
 
 echo "APPL????" > "$CONTENTS_DIR/PkgInfo"
 

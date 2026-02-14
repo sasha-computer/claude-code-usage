@@ -2,18 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "CCUsage",
+    name: "ClaudeCodeUsage",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "CCUsage", targets: ["CCUsage"])
+        .executable(name: "ClaudeCodeUsage", targets: ["ClaudeCodeUsage"])
     ],
     targets: [
         .executableTarget(
-            name: "CCUsage",
-            path: "CCUsage/Sources",
+            name: "ClaudeCodeUsage",
+            path: "ClaudeCodeUsage/Sources",
             exclude: ["App/Info.plist"]
+        ),
+        .testTarget(
+            name: "ClaudeCodeUsageTests",
+            dependencies: ["ClaudeCodeUsage"],
+            path: "Tests"
         )
     ]
 )

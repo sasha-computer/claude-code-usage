@@ -42,8 +42,8 @@ Downloads the latest release and installs to `/Applications`.
 
 ### Manual download
 
-1. Grab `CCUsage.zip` from the [latest release](https://github.com/sasha-computer/claude-code-usage/releases/latest)
-2. Unzip and move `CCUsage.app` to `/Applications`
+1. Grab `ClaudeCodeUsage.zip` from the [latest release](https://github.com/sasha-computer/claude-code-usage/releases/latest)
+2. Unzip and move `ClaudeCodeUsage.app` to `/Applications`
 3. First launch: right-click the app and select Open (one-time gate for unsigned apps)
 
 ## Usage
@@ -78,7 +78,7 @@ Other make targets: `make build` (build only), `make clean`, `make uninstall`.
 
 ## Credits
 
-Originally forked from [NewTurn2017/ccusage](https://github.com/NewTurn2017/ccusage). This fork is more actively maintained and includes English language support, a token refresh bug fix that prevented Claude Code from getting logged out, and a productionized README.
+Originally based on [NewTurn2017/ccusage](https://github.com/NewTurn2017/ccusage). Includes English language support, a token refresh bug fix that prevented Claude Code from getting logged out, and a productionized build/release pipeline.
 
 ## License
 

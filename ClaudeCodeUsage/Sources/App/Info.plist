@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>CCUsage</string>
+    <string>Claude Code Usage</string>
     <key>CFBundleDisplayName</key>
-    <string>Claude Code Usage Monitor</string>
+    <string>Claude Code Usage</string>
     <key>CFBundleIdentifier</key>
-    <string>com.ccusage.monitor</string>
+    <string>com.sasha-computer.claude-code-usage</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
@@ -17,7 +17,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
-    <string>CCUsage</string>
+    <string>ClaudeCodeUsage</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>
