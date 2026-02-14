@@ -31,13 +31,17 @@ You're deep in a coding session and Claude Code suddenly tells you you've hit yo
 
 ## Installation
 
-### One-liner (recommended)
+### Homebrew (recommended)
+
+```bash
+brew install --cask sasha-computer/tap/claude-code-usage
+```
+
+### One-liner
 
 ```bash
 curl -sL https://raw.githubusercontent.com/sasha-computer/claude-code-usage/main/install.sh | bash
 ```
-
-Downloads the latest release and installs to `/Applications`.
 
 ### Manual download
 

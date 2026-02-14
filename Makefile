@@ -1,4 +1,4 @@
-.PHONY: build install uninstall clean release
+.PHONY: build install uninstall clean release dmg bump-tap
 
 APP_NAME = ClaudeCodeUsage
 INSTALL_DIR = /Applications
@@ -40,5 +40,17 @@ release:
 	@git push && git push origin v$(v)
 	@$(MAKE) dmg
 	@gh release create v$(v) $(APP_NAME).dmg --title "v$(v)" --generate-notes
+	@$(MAKE) bump-tap v=$(v)
 	@rm -f $(APP_NAME).dmg
 	@echo "Released v$(v)"
+
+bump-tap:
+	@if [ -z "$(v)" ]; then echo "Usage: make bump-tap v=1.0.0"; exit 1; fi
+	$(eval SHA := $(shell curl -sL "https://github.com/sasha-computer/claude-code-usage/releases/download/v$(v)/$(APP_NAME).dmg" | shasum -a 256 | cut -d' ' -f1))
+	$(eval TAP_DIR := $(shell mktemp -d))
+	@git clone --depth 1 git@github.com:sasha-computer/homebrew-tap.git $(TAP_DIR)
+	@sed -i '' 's|version ".*"|version "$(v)"|' $(TAP_DIR)/Casks/claude-code-usage.rb
+	@sed -i '' 's|sha256 ".*"|sha256 "$(SHA)"|' $(TAP_DIR)/Casks/claude-code-usage.rb
+	@cd $(TAP_DIR) && git add -A && git commit -m "bump claude-code-usage to v$(v)" && git push
+	@rm -rf $(TAP_DIR)
+	@echo "Updated homebrew tap to v$(v)"
