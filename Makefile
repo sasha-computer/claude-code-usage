@@ -2,6 +2,7 @@
 
 APP_NAME = CCUsage
 INSTALL_DIR = /Applications
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
 
 build:
 	@bash build-app.sh
@@ -17,9 +18,19 @@ uninstall:
 	@echo "Uninstalled $(APP_NAME)"
 
 clean:
-	@rm -rf .build $(APP_NAME).app
+	@rm -rf .build $(APP_NAME).app $(APP_NAME).zip
 	@echo "Cleaned"
 
-release: build
-	@cd $(APP_NAME).app/.. && ditto -c -k --keepParent $(APP_NAME).app $(APP_NAME).zip
-	@echo "Created $(APP_NAME).zip"
+release:
+	@if [ -z "$(v)" ]; then echo "Usage: make release v=1.0.0"; exit 1; fi
+	@echo "Releasing v$(v)..."
+	@sed -i '' 's|<string>[0-9]*\.[0-9]*\.[0-9]*</string>|<string>$(v)</string>|g' CCUsage/Sources/App/Info.plist
+	@git add CCUsage/Sources/App/Info.plist
+	@git commit -m "release: v$(v)"
+	@git tag v$(v)
+	@git push && git push origin v$(v)
+	@bash build-app.sh
+	@ditto -c -k --keepParent $(APP_NAME).app $(APP_NAME).zip
+	@gh release create v$(v) $(APP_NAME).zip --title "v$(v)" --generate-notes
+	@rm -f $(APP_NAME).zip
+	@echo "Released v$(v)"
