@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Combine
 
 @main
 struct ClaudeCodeUsageApp: App {
@@ -18,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let usageMonitor = UsageMonitor()
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
-    private var updateTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -36,11 +37,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateStatusButton()
         }
         
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+        // Update the menu bar label whenever usage data changes
+        usageMonitor.$fiveHourPercent
+            .combineLatest(usageMonitor.$weeklyPercent)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _, _ in
                 self?.updateStatusButton()
             }
-        }
+            .store(in: &cancellables)
     }
     
     @objc private func togglePopover(_ sender: AnyObject?) {
