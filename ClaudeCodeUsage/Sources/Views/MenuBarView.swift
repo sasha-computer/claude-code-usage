@@ -26,7 +26,7 @@ struct MenuBarView: View {
                 ProgressView()
                     .scaleEffect(0.5)
             } else if let last = monitor.lastRefresh {
-                Text(Formatters.relativeTime(last))
+                Text(Formatters.fullTime(last))
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
