@@ -2,6 +2,7 @@
 .swiftpm/
 ClaudeCodeUsage.app/
 ClaudeCodeUsage.zip
+ClaudeCodeUsage.dmg
 *.xcodeproj/
 xcuserdata/
 .DS_Store

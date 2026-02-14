@@ -41,8 +41,8 @@ Downloads the latest release and installs to `/Applications`.
 
 ### Manual download
 
-1. Grab `ClaudeCodeUsage.zip` from the [latest release](https://github.com/sasha-computer/claude-code-usage/releases/latest)
-2. Unzip and move `ClaudeCodeUsage.app` to `/Applications`
+1. Grab `ClaudeCodeUsage.dmg` from the [latest release](https://github.com/sasha-computer/claude-code-usage/releases/latest)
+2. Open the DMG and drag `ClaudeCodeUsage.app` to `/Applications`
 3. First launch: right-click the app and select Open (one-time gate for unsigned apps)
 
 ## Usage
