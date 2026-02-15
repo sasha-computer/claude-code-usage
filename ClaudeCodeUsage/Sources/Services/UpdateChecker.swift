@@ -90,9 +90,145 @@ final class UpdateChecker: ObservableObject {
         updateAvailable = false
     }
     
+    @Published var isUpdating = false
+    @Published var updateError: String?
+    
     func openDownload() {
         if let url = downloadURL {
             NSWorkspace.shared.open(url)
+        }
+    }
+    
+    /// Downloads the DMG, mounts it, replaces the running app, and relaunches.
+    func installUpdate() async {
+        guard let url = downloadURL else {
+            updateError = "No download URL available."
+            return
+        }
+        
+        isUpdating = true
+        updateError = nil
+        
+        do {
+            // 1. Download DMG to temp
+            let (dmgPath, response) = try await URLSession.shared.download(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                throw UpdateError.downloadFailed
+            }
+            
+            let tmpDMG = FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeCodeUsage-update.dmg")
+            try? FileManager.default.removeItem(at: tmpDMG)
+            try FileManager.default.moveItem(at: dmgPath, to: tmpDMG)
+            
+            // 2. Mount DMG
+            let mountPoint = try await mountDMG(at: tmpDMG)
+            defer {
+                // Detach after copy
+                let detach = Process()
+                detach.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                detach.arguments = ["detach", mountPoint, "-quiet", "-force"]
+                try? detach.run()
+                detach.waitUntilExit()
+                try? FileManager.default.removeItem(at: tmpDMG)
+            }
+            
+            // 3. Find .app in mounted volume
+            let contents = try FileManager.default.contentsOfDirectory(atPath: mountPoint)
+            guard let appName = contents.first(where: { $0.hasSuffix(".app") }) else {
+                throw UpdateError.appNotFound
+            }
+            let sourceApp = URL(fileURLWithPath: mountPoint).appendingPathComponent(appName)
+            
+            // 4. Replace current app bundle
+            let currentApp = Bundle.main.bundleURL
+            let parentDir = currentApp.deletingLastPathComponent()
+            let backupURL = parentDir.appendingPathComponent("ClaudeCodeUsage-old.app")
+            
+            // Remove old backup if exists
+            try? FileManager.default.removeItem(at: backupURL)
+            
+            // Move current app to backup
+            try FileManager.default.moveItem(at: currentApp, to: backupURL)
+            
+            do {
+                // Copy new app into place
+                try FileManager.default.copyItem(at: sourceApp, to: currentApp)
+            } catch {
+                // Restore backup on failure
+                try? FileManager.default.moveItem(at: backupURL, to: currentApp)
+                throw UpdateError.replaceFailed
+            }
+            
+            // Clean up backup
+            try? FileManager.default.removeItem(at: backupURL)
+            
+            // 5. Relaunch
+            relaunch(at: currentApp)
+            
+        } catch {
+            isUpdating = false
+            updateError = error.localizedDescription
+        }
+    }
+    
+    private func mountDMG(at path: URL) async throws -> String {
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+        process.arguments = ["attach", path.path, "-nobrowse", "-noverify", "-noautoopen", "-plist"]
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        
+        try process.run()
+        process.waitUntilExit()
+        
+        guard process.terminationStatus == 0 else {
+            throw UpdateError.mountFailed
+        }
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let entities = plist["system-entities"] as? [[String: Any]] else {
+            throw UpdateError.mountFailed
+        }
+        
+        // Find the mount point
+        for entity in entities {
+            if let mountPoint = entity["mount-point"] as? String {
+                return mountPoint
+            }
+        }
+        
+        throw UpdateError.mountFailed
+    }
+    
+    private func relaunch(at appURL: URL) {
+        // Use a shell script to wait for this process to exit, then open the new app
+        let pid = ProcessInfo.processInfo.processIdentifier
+        let script = """
+        while kill -0 \(pid) 2>/dev/null; do sleep 0.1; done
+        open "\(appURL.path)"
+        """
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", script]
+        try? process.run()
+        
+        // Quit the current app
+        NSApplication.shared.terminate(nil)
+    }
+    
+    private enum UpdateError: LocalizedError {
+        case downloadFailed, mountFailed, appNotFound, replaceFailed
+        
+        var errorDescription: String? {
+            switch self {
+            case .downloadFailed: return "Failed to download the update."
+            case .mountFailed: return "Failed to mount the disk image."
+            case .appNotFound: return "Could not find the app in the disk image."
+            case .replaceFailed: return "Failed to replace the app. The original has been restored."
+            }
         }
     }
     

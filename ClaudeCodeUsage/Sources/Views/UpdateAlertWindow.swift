@@ -10,13 +10,13 @@ enum UpdateAlert {
         currentVersion: String,
         newVersion: String,
         releaseNotes: String?,
-        onDownload: @escaping () -> Void,
+        onInstall: @escaping () -> Void,
         onSkip: @escaping () -> Void,
         onLater: @escaping () -> Void
     ) {
         let alert = NSAlert()
         alert.messageText = "A new version of Claude Code Usage is available!"
-        alert.informativeText = "Version \(newVersion) is available — you have \(currentVersion). Would you like to download it now?"
+        alert.informativeText = "Version \(newVersion) is available — you have \(currentVersion). Would you like to install it now?"
         alert.alertStyle = .informational
         
         // Set the app icon
@@ -57,13 +57,58 @@ enum UpdateAlert {
         
         switch response {
         case .alertFirstButtonReturn:
-            onDownload()
+            onInstall()
         case .alertSecondButtonReturn:
             onLater()
         case .alertThirdButtonReturn:
             onSkip()
         default:
             onLater()
+        }
+    }
+    
+    /// Shows a progress alert while installing the update.
+    static func showInstalling() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = "Installing update..."
+        alert.informativeText = "Downloading and installing. The app will relaunch automatically."
+        alert.alertStyle = .informational
+        if let icon = NSApp.applicationIconImage {
+            alert.icon = icon
+        }
+        
+        let indicator = NSProgressIndicator(frame: NSRect(x: 0, y: 0, width: 300, height: 20))
+        indicator.style = .bar
+        indicator.isIndeterminate = true
+        indicator.startAnimation(nil)
+        alert.accessoryView = indicator
+        
+        // No actionable buttons - just a cancel
+        alert.addButton(withTitle: "Cancel")
+        
+        return alert
+    }
+    
+    /// Shows an error alert for failed updates, with a fallback to browser download.
+    static func showError(_ message: String, downloadURL: URL?) {
+        let alert = NSAlert()
+        alert.messageText = "Update Failed"
+        alert.informativeText = message + (downloadURL != nil ? "\n\nYou can download the update manually instead." : "")
+        alert.alertStyle = .warning
+        if let icon = NSApp.applicationIconImage {
+            alert.icon = icon
+        }
+        
+        if downloadURL != nil {
+            alert.addButton(withTitle: "Download Manually")
+            alert.addButton(withTitle: "OK")
+        } else {
+            alert.addButton(withTitle: "OK")
+        }
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn, let url = downloadURL {
+            NSWorkspace.shared.open(url)
         }
     }
     

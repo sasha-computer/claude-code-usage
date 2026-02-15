@@ -160,10 +160,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             currentVersion: updateChecker.currentVersion,
             newVersion: version,
             releaseNotes: updateChecker.releaseNotes,
-            onDownload: { [weak self] in self?.updateChecker.openDownload() },
+            onInstall: { [weak self] in self?.performInstallUpdate() },
             onSkip: { [weak self] in self?.updateChecker.skipVersion() },
             onLater: { [weak self] in self?.updateChecker.dismiss() }
         )
+    }
+    
+    private func performInstallUpdate() {
+        // Show progress alert on a background run loop so we can do async work
+        let alert = UpdateAlert.showInstalling()
+        
+        Task {
+            await updateChecker.installUpdate()
+            
+            // If we get here, the update failed (successful update relaunches)
+            // Dismiss the progress alert
+            NSApp.stopModal()
+            
+            if let error = updateChecker.updateError {
+                UpdateAlert.showError(error, downloadURL: updateChecker.downloadURL)
+            }
+        }
+        
+        // Run modal blocks until stopModal() or the app quits
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            // User clicked Cancel
+            // The download is already in progress but we can't easily cancel URLSession.download
+            // Just dismiss - if it finishes it'll still try to install
+        }
     }
     
     @objc private func openSettings() {

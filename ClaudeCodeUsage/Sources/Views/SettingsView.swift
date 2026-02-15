@@ -76,7 +76,17 @@ struct SettingsView: View {
                 currentVersion: updateChecker.currentVersion,
                 newVersion: version,
                 releaseNotes: updateChecker.releaseNotes,
-                onDownload: { updateChecker.openDownload() },
+                onInstall: {
+                    let alert = UpdateAlert.showInstalling()
+                    Task {
+                        await updateChecker.installUpdate()
+                        NSApp.stopModal()
+                        if let error = updateChecker.updateError {
+                            UpdateAlert.showError(error, downloadURL: updateChecker.downloadURL)
+                        }
+                    }
+                    alert.runModal()
+                },
                 onSkip: { updateChecker.skipVersion() },
                 onLater: { updateChecker.dismiss() }
             )
