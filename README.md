@@ -88,7 +88,7 @@ Other make targets: `make build` (build only), `make clean`, `make uninstall`.
 
 ## Credits
 
-Originally based on [NewTurn2017/ccusage](https://github.com/NewTurn2017/ccusage). Includes English language support, a token refresh bug fix that prevented Claude Code from getting logged out, and a productionized build/release pipeline.
+Originally based on [NewTurn2017/ccusage](https://github.com/NewTurn2017/ccusage). Includes English language support, an atomic token refresh that keeps Claude Code from getting logged out (even after sleep), and a productionized build/release pipeline.
 
 ## License
 
