@@ -1,0 +1,1 @@
+../../.pi/skills/new-release/SKILL.md
