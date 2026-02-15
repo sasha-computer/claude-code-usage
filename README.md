@@ -29,6 +29,13 @@ You're deep in a coding session and Claude Code suddenly tells you you've hit yo
 
 ## How it works
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/architecture-dark.svg" />
+    <img src="assets/architecture.svg" alt="Architecture diagram" width="700" />
+  </picture>
+</p>
+
 - Shows **5-hour** and **weekly** usage percentages in the menu bar
 - Color-coded: green (normal), orange (70%+), red (90%+)
 - Click the menu bar item for detailed usage breakdown and reset times
