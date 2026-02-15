@@ -29,12 +29,37 @@ You're deep in a coding session and Claude Code suddenly tells you you've hit yo
 
 ## How it works
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/architecture-dark.svg" />
-    <img src="assets/architecture.svg" alt="Architecture diagram" width="700" />
-  </picture>
-</p>
+```mermaid
+graph TD
+    subgraph macOS Menu Bar
+        AD[AppDelegate] --> UM[UsageMonitor]
+        AD --> UC[UpdateChecker]
+        AD --> SI[NSStatusItem]
+    end
+
+    subgraph Credential Resolution
+        UM -->|every 30s| API[ClaudeUsageAPI]
+        API --> KC[macOS Keychain]
+        API --> CF["~/.claude/.credentials.json"]
+        API -->|token expired| TR[OAuth Token Refresh]
+        TR -->|write back| KC
+    end
+
+    subgraph Anthropic API
+        API -->|Bearer token| UA["GET /api/oauth/usage"]
+        UA -->|5h + 7d utilization| UM
+    end
+
+    subgraph SwiftUI
+        UM -->|"@Published + Combine"| SI
+        SI -->|click| PO["NSPopover with MenuBarView"]
+    end
+
+    subgraph Auto-Update
+        UC -->|daily| GH[GitHub Releases API]
+        GH -->|new version| DMG["Download DMG → Mount → Replace → Relaunch"]
+    end
+```
 
 - Shows **5-hour** and **weekly** usage percentages in the menu bar
 - Color-coded: green (normal), orange (70%+), red (90%+)
