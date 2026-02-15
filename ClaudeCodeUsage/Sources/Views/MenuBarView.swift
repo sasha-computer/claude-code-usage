@@ -57,8 +57,13 @@ struct MenuBarView: View {
     
     private var headerSection: some View {
         HStack {
-            Text(L10n.headerTitle)
-                .font(.system(size: 13, weight: .semibold))
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(L10n.headerTitle)
+                    .font(.system(size: 13, weight: .semibold))
+                Text("v\(UpdateChecker.shared.currentVersion)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
             
             Spacer()
             

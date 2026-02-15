@@ -11,7 +11,7 @@ enum L10n {
     
     // MARK: - UI Labels
     
-    static let headerTitle = "Claude Code"
+    static let headerTitle = "Claude Code Usage"
     static let fiveHourLabel = "5-Hour"
     static let weeklyLabel = "Weekly"
     static let resetsPrefix = "Resets"
