@@ -12,6 +12,8 @@ enum UsageFetchError: Error {
     case tokenRefreshFailed
     case apiCallFailed
     case parseFailed
+    case autoLoginTriggered
+    case recovering
     
     var localizedMessage: String {
         switch self {
@@ -23,6 +25,10 @@ enum UsageFetchError: Error {
             return L10n.errorConnectionFailed
         case .parseFailed:
             return L10n.errorParseFailed
+        case .autoLoginTriggered:
+            return "Opening browser to re-authenticate..."
+        case .recovering:
+            return "Refreshing credentials..."
         }
     }
 }
@@ -37,21 +43,166 @@ final class ClaudeUsageAPI {
     /// Survives keychain write failures so the app keeps working until restart.
     private var cachedCreds: OAuthCreds?
     
+    /// Tracks whether we already spawned `claude login` this session to avoid loops.
+    private var autoLoginSpawned = false
+    
+    /// Timestamp of last successful auto-login, to avoid re-spawning too quickly.
+    private var lastAutoLoginTime: Date?
+    
     func fetchUsage() async -> Result<RateLimits, UsageFetchError> {
+        // Step 1: Get credentials (cache -> keychain -> file)
         guard var creds = getCredentials() else { return .failure(.noCredentials) }
         
-        if !isTokenValid(creds) {
-            guard let refreshToken = creds.refreshToken,
-                  let refreshed = await refreshAccessToken(refreshToken) else { return .failure(.tokenRefreshFailed) }
-            creds = refreshed
-            cachedCreds = refreshed
-            // Write refreshed tokens back so Claude Code stays authenticated
-            saveCredentials(creds)
+        // Step 2: Pre-emptive refresh -- refresh BEFORE the token fully expires.
+        // Claude Code tokens last ~60 min; we refresh with 12 min of headroom.
+        if Self.shouldRefreshPreemptively(expiresAt: creds.expiresAt) {
+            if let refreshed = await attemptRefreshWithRecovery(creds) {
+                creds = refreshed
+            }
+            // If pre-emptive refresh fails but token is still technically valid, proceed anyway
+            if !isTokenValid(creds) {
+                // Token is fully dead -- try recovery chain
+                if let recovered = await recoveryChain(failedCreds: creds) {
+                    creds = recovered
+                } else {
+                    return .failure(.tokenRefreshFailed)
+                }
+            }
         }
         
-        guard let data = await callAPI(accessToken: creds.accessToken) else { return .failure(.apiCallFailed) }
+        // Step 3: Call the usage API
+        guard let data = await callAPI(accessToken: creds.accessToken) else {
+            // Step 4: On 401, re-read keychain (Claude Code may have just refreshed)
+            if let recovered = await recoverFromAPIFailure(failedCreds: creds) {
+                guard let retryData = await callAPI(accessToken: recovered.accessToken) else {
+                    return .failure(.apiCallFailed)
+                }
+                guard let limits = parseResponse(retryData) else { return .failure(.parseFailed) }
+                return .success(limits)
+            }
+            return .failure(.apiCallFailed)
+        }
+        
         guard let limits = parseResponse(data) else { return .failure(.parseFailed) }
         return .success(limits)
+    }
+    
+    // MARK: - Recovery chain
+    
+    /// Full recovery chain when tokens are expired and refresh fails:
+    /// 1. Re-read keychain (Claude Code may have already refreshed)
+    /// 2. Wait + retry (Claude Code may be mid-refresh right now)
+    /// 3. Spawn `claude login` as last resort
+    private func recoveryChain(failedCreds: OAuthCreds) async -> OAuthCreds? {
+        // Recovery 1: Re-read keychain -- Claude Code may have already refreshed
+        if let fresh = recoverFromKeychain(failedAccessToken: failedCreds.accessToken) {
+            return fresh
+        }
+        
+        // Recovery 2: Wait 2s and re-read (Claude Code may be mid-refresh right now)
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        if let fresh = recoverFromKeychain(failedAccessToken: failedCreds.accessToken) {
+            return fresh
+        }
+        
+        // Recovery 3: Spawn `claude login` (opens browser, user re-authenticates)
+        spawnAutoLogin()
+        return nil
+    }
+    
+    /// Attempts a normal token refresh, falling back to keychain re-read on failure.
+    private func attemptRefreshWithRecovery(_ creds: OAuthCreds) async -> OAuthCreds? {
+        // Try normal refresh first
+        if let refreshToken = creds.refreshToken,
+           let refreshed = await refreshAccessToken(refreshToken) {
+            cachedCreds = refreshed
+            saveCredentials(refreshed)
+            return refreshed
+        }
+        
+        // Refresh failed (invalid_grant, etc.) -- check keychain for fresh tokens
+        return recoverFromKeychain(failedAccessToken: creds.accessToken)
+    }
+    
+    /// Re-reads the keychain and returns fresh creds if another process updated them.
+    private func recoverFromKeychain(failedAccessToken: String) -> OAuthCreds? {
+        // Force a fresh keychain read (bypass in-memory cache)
+        guard let kc = readKeychain() else { return nil }
+        
+        if Self.isKeychainTokenNewer(
+            cachedAccessToken: failedAccessToken,
+            keychainAccessToken: kc.accessToken,
+            keychainExpiresAt: kc.expiresAt
+        ) {
+            cachedCreds = kc
+            return kc
+        }
+        return nil
+    }
+    
+    /// Re-reads keychain after an API call failure (401).
+    private func recoverFromAPIFailure(failedCreds: OAuthCreds) async -> OAuthCreds? {
+        // Check if keychain has newer token
+        if let fresh = recoverFromKeychain(failedAccessToken: failedCreds.accessToken) {
+            return fresh
+        }
+        
+        // Try a full refresh
+        if let refreshed = await attemptRefreshWithRecovery(failedCreds) {
+            return refreshed
+        }
+        
+        // Wait and retry keychain one more time
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        if let fresh = recoverFromKeychain(failedAccessToken: failedCreds.accessToken) {
+            return fresh
+        }
+        
+        // Last resort: auto-login
+        spawnAutoLogin()
+        return nil
+    }
+    
+    /// Spawns `claude login` to re-authenticate via the browser.
+    /// Rate-limited to once per 5 minutes to avoid spamming.
+    private func spawnAutoLogin() {
+        let now = Date()
+        if let lastTime = lastAutoLoginTime,
+           now.timeIntervalSince(lastTime) < 300 {
+            return  // Already spawned recently
+        }
+        lastAutoLoginTime = now
+        
+        // Find the claude binary
+        let claudePath = Self.findClaudeBinary()
+        guard let path = claudePath else { return }
+        
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: path)
+        task.arguments = ["login"]
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        do {
+            try task.run()
+            // Don't wait -- the browser flow is interactive
+        } catch {
+            // Claude binary not found or not executable -- nothing we can do
+        }
+    }
+    
+    /// Locates the claude binary, checking common installation paths.
+    static func findClaudeBinary() -> String? {
+        let candidates = [
+            "\(NSHomeDirectory())/.local/bin/claude",
+            "/usr/local/bin/claude",
+            "/opt/homebrew/bin/claude",
+        ]
+        for path in candidates {
+            if FileManager.default.isExecutableFile(atPath: path) {
+                return path
+            }
+        }
+        return nil
     }
     
     private struct OAuthCreds {
@@ -210,6 +361,39 @@ final class ClaudeUsageAPI {
         return expiresAt > Date().timeIntervalSince1970 * 1000
     }
     
+    /// Returns true when the token is within 12 minutes of expiry (or already expired).
+    /// Claude Code access tokens last ~60 minutes; refreshing at 80% lifetime (48 min)
+    /// means we refresh with 12 minutes of headroom, well before the token dies.
+    static let preemptiveRefreshMarginSeconds: TimeInterval = 720  // 12 minutes
+    
+    static func shouldRefreshPreemptively(expiresAt: TimeInterval?) -> Bool {
+        guard let expiresAt = expiresAt else { return false }
+        let nowMs = Date().timeIntervalSince1970 * 1000
+        let marginMs = preemptiveRefreshMarginSeconds * 1000
+        return expiresAt < (nowMs + marginMs)
+    }
+    
+    /// Returns true when the keychain holds a different, still-valid access token
+    /// compared to the one the app has cached. This means another process (Claude Code)
+    /// has already refreshed the token for us.
+    static func isKeychainTokenNewer(
+        cachedAccessToken: String,
+        keychainAccessToken: String?,
+        keychainExpiresAt: TimeInterval?
+    ) -> Bool {
+        guard let keychainToken = keychainAccessToken,
+              keychainToken != cachedAccessToken else { return false }
+        // The new token must actually be valid (or have no expiry, i.e. long-lived)
+        if let expiresAt = keychainExpiresAt {
+            let nowMs = Date().timeIntervalSince1970 * 1000
+            return expiresAt > nowMs
+        }
+        return true  // No expiry means long-lived token
+    }
+    
+    /// The CLI command that re-authenticates Claude Code via the browser.
+    static let claudeLoginCommand = "claude login"
+    
     private func refreshAccessToken(_ refreshToken: String) async -> OAuthCreds? {
         var request = URLRequest(url: tokenRefreshURL)
         request.httpMethod = "POST"
@@ -235,6 +419,9 @@ final class ClaudeUsageAPI {
         )
     }
     
+    /// Last HTTP status code from the usage API (used for 401 detection).
+    private(set) var lastAPIStatusCode: Int?
+    
     private func callAPI(accessToken: String) async -> Data? {
         var request = URLRequest(url: apiURL)
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
@@ -243,8 +430,12 @@ final class ClaudeUsageAPI {
         request.timeoutInterval = 10
         
         guard let (data, response) = try? await URLSession.shared.data(for: request),
-              let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else { return nil }
+              let httpResponse = response as? HTTPURLResponse else {
+            lastAPIStatusCode = nil
+            return nil
+        }
+        lastAPIStatusCode = httpResponse.statusCode
+        guard httpResponse.statusCode == 200 else { return nil }
         return data
     }
     
