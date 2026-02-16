@@ -66,13 +66,6 @@ final class TokenRefreshTests: XCTestCase {
         XCTAssertFalse(result, "No keychain token is not newer")
     }
     
-    // MARK: - Auto-login detection
-    
-    func testAutoLoginCommandIsCorrect() {
-        let cmd = ClaudeUsageAPI.claudeLoginCommand
-        XCTAssertEqual(cmd, "claude login")
-    }
-    
     // MARK: - Error messages guide the user correctly
     
     func testTokenExpiredErrorSuggestsLogin() {
@@ -80,27 +73,14 @@ final class TokenRefreshTests: XCTestCase {
         XCTAssertTrue(msg.contains("claude login"), "Error should tell user to run claude login")
     }
     
-    func testTokenExpiredWithAutoLoginShowsRecoveryMessage() {
-        let msg = UsageFetchError.autoLoginTriggered.localizedMessage
-        XCTAssertTrue(msg.lowercased().contains("browser"), "Should mention browser-based login")
-    }
-    
-    func testRecoveringStateShowsRetryMessage() {
+    func testRecoveringStateShowsRefreshMessage() {
         let msg = UsageFetchError.recovering.localizedMessage
-        XCTAssertTrue(msg.lowercased().contains("retry") || msg.lowercased().contains("refresh"),
-                       "Should indicate we're retrying")
+        XCTAssertTrue(msg.lowercased().contains("refresh"),
+                       "Should indicate we're refreshing")
     }
     
-    // MARK: - Claude binary discovery
-    
-    func testFindClaudeBinaryFindsInstalledClaude() {
-        // The user has claude installed -- this should find it
-        let path = ClaudeUsageAPI.findClaudeBinary()
-        // We can't guarantee it's installed in tests, but if it is, it should be valid
-        if let path = path {
-            XCTAssertTrue(FileManager.default.isExecutableFile(atPath: path),
-                          "Found binary should be executable")
-        }
+    func testAutoLoginCommandIsCorrect() {
+        XCTAssertEqual(ClaudeUsageAPI.claudeLoginCommand, "claude login")
     }
     
     // MARK: - Pre-emptive refresh boundary

@@ -12,7 +12,6 @@ enum UsageFetchError: Error {
     case tokenRefreshFailed
     case apiCallFailed
     case parseFailed
-    case autoLoginTriggered
     case recovering
     
     var localizedMessage: String {
@@ -25,8 +24,6 @@ enum UsageFetchError: Error {
             return L10n.errorConnectionFailed
         case .parseFailed:
             return L10n.errorParseFailed
-        case .autoLoginTriggered:
-            return "Opening browser to re-authenticate..."
         case .recovering:
             return "Refreshing credentials..."
         }
@@ -43,11 +40,7 @@ final class ClaudeUsageAPI {
     /// Survives keychain write failures so the app keeps working until restart.
     private var cachedCreds: OAuthCreds?
     
-    /// Tracks whether we already spawned `claude login` this session to avoid loops.
-    private var autoLoginSpawned = false
     
-    /// Timestamp of last successful auto-login, to avoid re-spawning too quickly.
-    private var lastAutoLoginTime: Date?
     
     func fetchUsage() async -> Result<RateLimits, UsageFetchError> {
         // Step 1: Get credentials (cache -> keychain -> file)
@@ -92,7 +85,6 @@ final class ClaudeUsageAPI {
     /// Full recovery chain when tokens are expired and refresh fails:
     /// 1. Re-read keychain (Claude Code may have already refreshed)
     /// 2. Wait + retry (Claude Code may be mid-refresh right now)
-    /// 3. Spawn `claude login` as last resort
     private func recoveryChain(failedCreds: OAuthCreds) async -> OAuthCreds? {
         // Recovery 1: Re-read keychain -- Claude Code may have already refreshed
         if let fresh = recoverFromKeychain(failedAccessToken: failedCreds.accessToken) {
@@ -105,8 +97,6 @@ final class ClaudeUsageAPI {
             return fresh
         }
         
-        // Recovery 3: Spawn `claude login` (opens browser, user re-authenticates)
-        spawnAutoLogin()
         return nil
     }
     
@@ -154,55 +144,7 @@ final class ClaudeUsageAPI {
         
         // Wait and retry keychain one more time
         try? await Task.sleep(nanoseconds: 2_000_000_000)
-        if let fresh = recoverFromKeychain(failedAccessToken: failedCreds.accessToken) {
-            return fresh
-        }
-        
-        // Last resort: auto-login
-        spawnAutoLogin()
-        return nil
-    }
-    
-    /// Spawns `claude login` to re-authenticate via the browser.
-    /// Rate-limited to once per 5 minutes to avoid spamming.
-    private func spawnAutoLogin() {
-        let now = Date()
-        if let lastTime = lastAutoLoginTime,
-           now.timeIntervalSince(lastTime) < 300 {
-            return  // Already spawned recently
-        }
-        lastAutoLoginTime = now
-        
-        // Find the claude binary
-        let claudePath = Self.findClaudeBinary()
-        guard let path = claudePath else { return }
-        
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: path)
-        task.arguments = ["login"]
-        task.standardOutput = FileHandle.nullDevice
-        task.standardError = FileHandle.nullDevice
-        do {
-            try task.run()
-            // Don't wait -- the browser flow is interactive
-        } catch {
-            // Claude binary not found or not executable -- nothing we can do
-        }
-    }
-    
-    /// Locates the claude binary, checking common installation paths.
-    static func findClaudeBinary() -> String? {
-        let candidates = [
-            "\(NSHomeDirectory())/.local/bin/claude",
-            "/usr/local/bin/claude",
-            "/opt/homebrew/bin/claude",
-        ]
-        for path in candidates {
-            if FileManager.default.isExecutableFile(atPath: path) {
-                return path
-            }
-        }
-        return nil
+        return recoverFromKeychain(failedAccessToken: failedCreds.accessToken)
     }
     
     private struct OAuthCreds {
@@ -392,6 +334,7 @@ final class ClaudeUsageAPI {
     }
     
     /// The CLI command that re-authenticates Claude Code via the browser.
+    /// Shown in error messages so the user knows what to run if all recovery fails.
     static let claudeLoginCommand = "claude login"
     
     private func refreshAccessToken(_ refreshToken: String) async -> OAuthCreds? {
