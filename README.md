@@ -34,13 +34,16 @@ graph TD
     subgraph macOS Menu Bar
         AD[AppDelegate] --> UM[UsageMonitor]
         AD --> UC[UpdateChecker]
+        AD --> AS[AccountStore]
         AD --> SI[NSStatusItem]
+        AS -->|active account token| UM
     end
 
     subgraph Credential Resolution
         UM -->|every 30s| API[ClaudeUsageAPI]
         API --> KC[macOS Keychain]
         API --> CF["~/.claude/.credentials.json"]
+        AS -->|reads| MCC["~/.pi/agent/multi-claude-code.json"]
         API -->|token expired| TR[OAuth Token Refresh]
         TR -->|write back| KC
     end
@@ -64,6 +67,7 @@ graph TD
 - Shows **5-hour** and **weekly** usage percentages in the menu bar
 - Color-coded: green (normal), orange (70%+), red (90%+)
 - Click the menu bar item for detailed usage breakdown and reset times
+- **Multi-account support** -- switch between multiple Claude Code accounts via [pi's MCC extension](https://github.com/mariozechner/pi-coding-agent). A badge in the menu bar shows the active account, and a segmented picker in the popover lets you toggle between them.
 - **Automatic updates** -- checks for new versions and installs them in-place. No manual downloads or DMG wrangling.
 - Refreshes every 30 seconds, reads credentials from the macOS Keychain
 - Zero config. If you're logged into Claude Code, it just works.
@@ -97,6 +101,16 @@ The menu bar shows `5h 12%  7d 34%` (or whatever your current usage is). Click i
 - Exact percentages for both windows
 - Reset countdown timers
 - A refresh button if you want to check right now
+
+### Multi-account (MCC)
+
+If you use [pi's multi-claude-code extension](https://github.com/mariozechner/pi-coding-agent), you can monitor usage across multiple Claude Code accounts:
+
+1. Open Settings (right-click the menu bar item)
+2. Enable the **Multi-Claude-Code** toggle
+3. The app reads accounts from `~/.pi/agent/multi-claude-code.json`
+
+When enabled, the menu bar shows a badge with the active account's initial, and the popover footer has a segmented picker to switch between accounts.
 
 ### Requirements
 
