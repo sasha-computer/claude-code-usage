@@ -22,7 +22,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var cancellable: AnyCancellable?
     private var updateCancellable: AnyCancellable?
+    private var authErrorCancellable: AnyCancellable?
     private var eventMonitor: Any?
+    
+    /// Tracks the last time we showed the auth-expired alert so we don't spam the user.
+    /// The refresh timer fires every 30s, but we only show the alert once per 4 hours.
+    private var lastAuthAlertShown: Date?
+    private let authAlertCooldown: TimeInterval = 4 * 60 * 60  // 4 hours
     
     private let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
     
@@ -106,6 +112,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] _ in
                 self?.showUpdateAlert()
             }
+        
+        // Show auth-expired alert when token refresh fails
+        authErrorCancellable = usageMonitor.$error
+            .compactMap { $0 }
+            .filter { $0 == .tokenRefreshFailed || $0 == .noCredentials }
+            .sink { [weak self] _ in
+                self?.showAuthExpiredAlertIfNeeded()
+            }
     }
     
     @objc private func togglePopover(_ sender: AnyObject?) {
@@ -163,6 +177,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onInstall: { [weak self] in self?.performInstallUpdate() },
             onSkip: { [weak self] in self?.updateChecker.skipVersion() },
             onLater: { [weak self] in self?.updateChecker.dismiss() }
+        )
+    }
+    
+    private func showAuthExpiredAlertIfNeeded() {
+        // Throttle: only show once per cooldown period
+        if let last = lastAuthAlertShown, Date().timeIntervalSince(last) < authAlertCooldown {
+            return
+        }
+        lastAuthAlertShown = Date()
+        
+        popover.performClose(nil)
+        AuthExpiredAlert.show(
+            onReauthenticate: {
+                AuthExpiredAlert.launchClaudeLogin()
+            },
+            onDismiss: {
+                // Nothing to do -- the next successful refresh will clear the error
+            }
         )
     }
     

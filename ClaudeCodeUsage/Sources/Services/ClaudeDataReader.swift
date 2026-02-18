@@ -7,7 +7,7 @@ struct RateLimits {
     let weeklyResetsAt: Date?
 }
 
-enum UsageFetchError: Error {
+enum UsageFetchError: Error, Equatable {
     case noCredentials
     case tokenRefreshFailed
     case apiCallFailed
