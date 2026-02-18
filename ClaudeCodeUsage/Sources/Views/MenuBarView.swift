@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var monitor: UsageMonitor
+    @EnvironmentObject var accountStore: AccountStore
     @ObservedObject var updateChecker = UpdateChecker.shared
     
     var body: some View {
@@ -129,6 +130,11 @@ struct MenuBarView: View {
             
             Spacer()
             
+            if accountStore.isEnabled && accountStore.accounts.count > 1 {
+                accountSwitcher
+                Spacer()
+            }
+            
             Button(action: { NSApplication.shared.terminate(nil) }) {
                 Text(L10n.quit)
                     .font(.system(size: 11))
@@ -138,6 +144,27 @@ struct MenuBarView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+    
+    private var accountSwitcher: some View {
+        HStack(spacing: 2) {
+            ForEach(accountStore.accounts) { account in
+                let isActive = account.label.caseInsensitiveCompare(
+                    accountStore.activeAccount?.label ?? ""
+                ) == .orderedSame
+                Button(action: { accountStore.setActive(account.label) }) {
+                    Text(String(account.label.prefix(1)).uppercased())
+                        .font(.system(size: 10, weight: isActive ? .bold : .regular, design: .monospaced))
+                        .foregroundStyle(isActive ? .primary : .tertiary)
+                        .frame(width: 20, height: 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 

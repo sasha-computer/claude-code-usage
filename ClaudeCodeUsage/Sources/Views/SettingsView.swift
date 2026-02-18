@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var monitor: UsageMonitor
+    @EnvironmentObject var accountStore: AccountStore
     @ObservedObject var updateChecker = UpdateChecker.shared
     @State private var checkAutomatically: Bool = UpdateChecker.shared.checkAutomatically
     
@@ -57,6 +58,41 @@ struct SettingsView: View {
                 }
             }
             
+            Section(L10n.mccSectionTitle) {
+                Toggle(L10n.mccToggle, isOn: $accountStore.isEnabled)
+                
+                if accountStore.isEnabled {
+                    if let error = accountStore.fileError {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                            Text(error)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if !accountStore.accounts.isEmpty {
+                        ForEach(accountStore.accounts) { account in
+                            HStack {
+                                Circle()
+                                    .fill(account.label.caseInsensitiveCompare(
+                                        accountStore.activeAccount?.label ?? ""
+                                    ) == .orderedSame ? Color.green : Color.clear)
+                                    .overlay(
+                                        Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                                    )
+                                    .frame(width: 8, height: 8)
+                                Text(account.label)
+                                    .font(.system(size: 12))
+                                Spacer()
+                                Text(account.isTokenExpired ? L10n.mccTokenExpired : L10n.mccTokenValid)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(account.isTokenExpired ? .orange : .green)
+                            }
+                        }
+                    }
+                }
+            }
+            
             Section(L10n.settingsInfo) {
                 LabeledContent(L10n.settingsVersion, value: updateChecker.currentVersion)
                 LabeledContent(L10n.settingsDataSource, value: "Anthropic OAuth API")
@@ -65,7 +101,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 380, height: 360)
+        .frame(width: 380, height: 460)
         .navigationTitle(L10n.settingsTitle)
     }
     
