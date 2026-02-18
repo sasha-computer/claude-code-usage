@@ -7,11 +7,9 @@ struct ClaudeCodeUsageApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
-        Settings {
-            SettingsView()
-                .environmentObject(appDelegate.usageMonitor)
-                .environmentObject(appDelegate.accountStore)
-        }
+        // Settings window is managed manually in AppDelegate.openSettings()
+        // because SwiftUI's showSettingsWindow: action is unreliable in LSUIElement apps.
+        Settings { EmptyView() }
     }
 }
 
@@ -30,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
+    private var settingsWindow: NSWindow?
     private var cancellable: AnyCancellable?
     private var updateCancellable: AnyCancellable?
     private var authErrorCancellable: AnyCancellable?
@@ -254,17 +253,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func openSettings() {
         popover.performClose(nil)
-        // Defer one run loop tick so the menu/popover fully dismisses and the app
-        // activates before SwiftUI tries to present the Settings window. Without
-        // this, LSUIElement apps silently drop the sendAction call.
-        DispatchQueue.main.async {
-            NSApp.activate(ignoringOtherApps: true)
-            if #available(macOS 14.0, *) {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            } else {
-                NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-            }
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Reuse existing window if already open
+        if let window = settingsWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            return
         }
+
+        let rootView = SettingsView()
+            .environmentObject(usageMonitor)
+            .environmentObject(accountStore)
+
+        let controller = NSHostingController(rootView: rootView)
+        let window = NSWindow(contentViewController: controller)
+        window.title = L10n.settingsTitle
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.setContentSize(NSSize(width: 380, height: 460))
+        window.isReleasedWhenClosed = false
+        window.center()
+        settingsWindow = window
+        window.makeKeyAndOrderFront(nil)
     }
     
     private func updateStatusButton(fiveH: Int, weekly: Int, accountLabel: String? = nil) {
