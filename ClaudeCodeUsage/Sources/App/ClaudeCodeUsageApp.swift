@@ -10,14 +10,24 @@ struct ClaudeCodeUsageApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appDelegate.usageMonitor)
+                .environmentObject(appDelegate.accountStore)
         }
     }
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let usageMonitor = UsageMonitor()
+    let accountStore: AccountStore
+    let usageMonitor: UsageMonitor
     let updateChecker = UpdateChecker.shared
+
+    override init() {
+        let store = AccountStore()
+        self.accountStore = store
+        self.usageMonitor = UsageMonitor(accountStore: store)
+        super.init()
+    }
+
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var cancellable: AnyCancellable?
@@ -39,7 +49,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 280, height: 260)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
-            rootView: MenuBarView().environmentObject(usageMonitor)
+            rootView: MenuBarView()
+                .environmentObject(usageMonitor)
+                .environmentObject(accountStore)
         )
         
         if let button = statusItem.button {
@@ -89,17 +101,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return nil
             }
             
+            // Account switching via letter keys when MCC is active
+            if self.accountStore.isEnabled && self.accountStore.accounts.count > 1,
+               !event.modifierFlags.contains(.command),
+               let char = event.charactersIgnoringModifiers?.lowercased() {
+                let matched = self.accountStore.accounts.first {
+                    String($0.label.prefix(1)).lowercased() == char
+                }
+                if let matched = matched, matched.label != self.accountStore.activeAccount?.label {
+                    self.accountStore.setActive(matched.label)
+                    return nil
+                }
+            }
+            
             return event
         }
         
         // Reactive status bar updates
-        cancellable = usageMonitor.$fiveHourPercent
+        let usagePub = usageMonitor.$fiveHourPercent
             .combineLatest(usageMonitor.$weeklyPercent)
+        let combinedPub = usagePub
+            .combineLatest(usageMonitor.$activeAccountLabel)
             .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
-            .map { (Int($0.rounded()), Int($1.rounded())) }
-            .removeDuplicates { $0 == $1 }
-            .sink { [weak self] fiveH, weekly in
-                self?.updateStatusButton(fiveH: fiveH, weekly: weekly)
+
+        cancellable = combinedPub
+            .sink { [weak self] pair, label in
+                let fiveH = Int(pair.0.rounded())
+                let weekly = Int(pair.1.rounded())
+                self?.updateStatusButton(fiveH: fiveH, weekly: weekly, accountLabel: label)
             }
         
         // Auto-check for updates on launch
@@ -235,7 +264,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    private func updateStatusButton(fiveH: Int, weekly: Int) {
+    private func updateStatusButton(fiveH: Int, weekly: Int, accountLabel: String? = nil) {
         guard let button = statusItem.button else { return }
         
         let fiveHColor = statusColor(for: Double(fiveH))
@@ -243,6 +272,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let dimAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
         
         let text = NSMutableAttributedString()
+        
+        if let label = accountLabel {
+            let initial = String(label.prefix(1)).uppercased()
+            text.append(NSAttributedString(string: "\(initial) ", attributes: [
+                .font: font,
+                .foregroundColor: NSColor.secondaryLabelColor,
+            ]))
+        }
+        
         text.append(NSAttributedString(string: "5h ", attributes: dimAttrs))
         text.append(NSAttributedString(string: "\(fiveH)%", attributes: [.font: font, .foregroundColor: fiveHColor]))
         text.append(NSAttributedString(string: "  ", attributes: dimAttrs))
