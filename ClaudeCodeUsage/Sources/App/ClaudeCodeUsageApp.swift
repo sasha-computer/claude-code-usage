@@ -290,9 +290,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let badge = Self.accountBadgeImage(initial: initial, size: 16)
             let attachment = NSTextAttachment()
             attachment.image = badge
-            attachment.bounds = CGRect(x: 0, y: -3, width: 16, height: 16)
+            attachment.bounds = CGRect(x: 0, y: -2, width: 16, height: 16)
             text.append(NSAttributedString(attachment: attachment))
-            text.append(NSAttributedString(string: " ", attributes: dimAttrs))
+            // Extra kern to push the numbers away from the badge
+            text.append(NSAttributedString(string: " ", attributes: dimAttrs.merging([.kern: 4], uniquingKeysWith: { $1 })))
         }
         
         text.append(NSAttributedString(string: "5h ", attributes: dimAttrs))

@@ -147,24 +147,19 @@ struct MenuBarView: View {
     }
     
     private var accountSwitcher: some View {
-        HStack(spacing: 4) {
+        let binding = Binding<String>(
+            get: { accountStore.activeLabel ?? accountStore.accounts.first?.label ?? "" },
+            set: { accountStore.setActive($0) }
+        )
+        return Picker("Account", selection: binding) {
             ForEach(accountStore.accounts) { account in
-                let isActive = account.label.caseInsensitiveCompare(
-                    accountStore.activeAccount?.label ?? ""
-                ) == .orderedSame
-                Button(action: { accountStore.setActive(account.label) }) {
-                    Text(String(account.label.prefix(1)).uppercased())
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 20, height: 20)
-                        .background(
-                            Circle()
-                                .fill(isActive ? Color.secondary : Color.secondary.opacity(0.35))
-                        )
-                }
-                .buttonStyle(.plain)
+                Text(String(account.label.prefix(1)).uppercased())
+                    .tag(account.label)
             }
         }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
     }
 }
 
