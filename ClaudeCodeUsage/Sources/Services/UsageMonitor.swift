@@ -12,9 +12,12 @@ final class UsageMonitor: ObservableObject {
     @Published var isLoading = false
     @Published var lastRefresh: Date?
     @Published var error: UsageFetchError?
+    @Published var activeAccountLabel: String?
     
     private let api = ClaudeUsageAPI()
+    let accountStore: AccountStore
     private var timer: Timer?
+    private var accountStoreCancellable: AnyCancellable?
     
     var fiveHourTimeRemaining: TimeInterval? {
         guard let reset = fiveHourResetsAt else { return nil }
@@ -36,9 +39,20 @@ final class UsageMonitor: ObservableObject {
         UsageStatus.from(percent: weeklyPercent)
     }
     
-    init() {
+    init(accountStore: AccountStore) {
+        self.accountStore = accountStore
         Task { await refresh() }
         startAutoRefresh()
+        
+        // Refresh when MCC settings change
+        accountStoreCancellable = accountStore.$isEnabled
+            .combineLatest(accountStore.$activeLabel)
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refresh()
+                }
+            }
     }
     
     var hasError: Bool { error != nil }
@@ -46,7 +60,26 @@ final class UsageMonitor: ObservableObject {
     func refresh() async {
         isLoading = true
         
-        let result = await api.fetchUsage()
+        let result: Result<RateLimits, UsageFetchError>
+        
+        if accountStore.isEnabled {
+            accountStore.reload()
+            if let account = accountStore.activeAccount {
+                activeAccountLabel = account.label
+                if account.isTokenExpired {
+                    result = .failure(.tokenRefreshFailed)
+                } else {
+                    result = await api.fetchUsage(accessToken: account.accessToken)
+                }
+            } else {
+                activeAccountLabel = nil
+                result = .failure(.noCredentials)
+            }
+        } else {
+            activeAccountLabel = nil
+            result = await api.fetchUsage()
+        }
+        
         switch result {
         case .success(let limits):
             fiveHourPercent = limits.fiveHourPercent
