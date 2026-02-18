@@ -254,13 +254,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func openSettings() {
         popover.performClose(nil)
-        // Open the Settings window
-        if #available(macOS 14.0, *) {
+        // Defer one run loop tick so the menu/popover fully dismisses and the app
+        // activates before SwiftUI tries to present the Settings window. Without
+        // this, LSUIElement apps silently drop the sendAction call.
+        DispatchQueue.main.async {
             NSApp.activate(ignoringOtherApps: true)
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.activate(ignoringOtherApps: true)
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+            if #available(macOS 14.0, *) {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            } else {
+                NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+            }
         }
     }
     
