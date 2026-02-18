@@ -51,4 +51,17 @@ enum L10n {
     static func settingsUpToDate(_ version: String) -> String {
         "Up to date (v\(version))"
     }
+
+    // MARK: - MCC Integration
+
+    static let mccSectionTitle = "Multi-Account (pi)"
+    static let mccToggle = "Use pi multi-claude-code accounts"
+    static let mccFileNotFound = "MCC file not found. Install pi multi-claude-code first."
+    static let mccFileUnreadable = "Could not read MCC config file."
+    static let mccFileInvalidJSON = "MCC config file contains invalid JSON."
+    static let mccFileNoAccounts = "MCC config file has no accounts."
+    static let mccFileNoValidAccounts = "No valid accounts in MCC config."
+    static let mccTokenExpired = "expired"
+    static let mccTokenValid = "ok"
+    static let mccAccountsLabel = "Accounts"
 }
