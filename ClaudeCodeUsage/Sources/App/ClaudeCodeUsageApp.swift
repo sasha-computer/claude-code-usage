@@ -283,19 +283,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let weeklyColor = statusColor(for: Double(weekly))
         let dimAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
         
-        let text = NSMutableAttributedString()
-        
+        // Use the button's native image property for the badge so macOS handles alignment
         if let label = accountLabel {
             let initial = String(label.prefix(1)).uppercased()
-            let badge = Self.accountBadgeImage(initial: initial, size: 16)
-            let attachment = NSTextAttachment()
-            attachment.image = badge
-            attachment.bounds = CGRect(x: 0, y: -2, width: 16, height: 16)
-            text.append(NSAttributedString(attachment: attachment))
-            // Extra kern to push the numbers away from the badge
-            text.append(NSAttributedString(string: " ", attributes: dimAttrs.merging([.kern: 4], uniquingKeysWith: { $1 })))
+            button.image = Self.accountBadgeImage(initial: initial, size: 18)
+            button.imagePosition = .imageLeading
+        } else {
+            button.image = nil
+            button.imagePosition = .noImage
         }
         
+        let text = NSMutableAttributedString()
         text.append(NSAttributedString(string: "5h ", attributes: dimAttrs))
         text.append(NSAttributedString(string: "\(fiveH)%", attributes: [.font: font, .foregroundColor: fiveHColor]))
         text.append(NSAttributedString(string: "  ", attributes: dimAttrs))
