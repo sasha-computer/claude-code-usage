@@ -294,6 +294,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         let text = NSMutableAttributedString()
+        if accountLabel != nil {
+            text.append(NSAttributedString(string: " ", attributes: [.font: font, .kern: 2]))
+        }
         text.append(NSAttributedString(string: "5h ", attributes: dimAttrs))
         text.append(NSAttributedString(string: "\(fiveH)%", attributes: [.font: font, .foregroundColor: fiveHColor]))
         text.append(NSAttributedString(string: "  ", attributes: dimAttrs))
