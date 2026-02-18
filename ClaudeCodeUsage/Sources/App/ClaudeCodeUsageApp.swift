@@ -287,10 +287,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let label = accountLabel {
             let initial = String(label.prefix(1)).uppercased()
-            text.append(NSAttributedString(string: "\(initial) ", attributes: [
-                .font: font,
-                .foregroundColor: NSColor.secondaryLabelColor,
-            ]))
+            let badge = Self.accountBadgeImage(initial: initial, size: 16)
+            let attachment = NSTextAttachment()
+            attachment.image = badge
+            attachment.bounds = CGRect(x: 0, y: -3, width: 16, height: 16)
+            text.append(NSAttributedString(attachment: attachment))
+            text.append(NSAttributedString(string: " ", attributes: dimAttrs))
         }
         
         text.append(NSAttributedString(string: "5h ", attributes: dimAttrs))
@@ -306,5 +308,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if percent >= 90 { return .systemRed }
         if percent >= 70 { return .systemOrange }
         return .labelColor
+    }
+
+    private static func accountBadgeImage(initial: String, size: CGFloat) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            // Filled circle
+            NSColor.secondaryLabelColor.setFill()
+            NSBezierPath(ovalIn: rect).fill()
+
+            // White letter centered
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: size * 0.55, weight: .semibold),
+                .foregroundColor: NSColor.white,
+            ]
+            let str = NSAttributedString(string: initial, attributes: attrs)
+            let strSize = str.size()
+            str.draw(at: NSPoint(
+                x: (size - strSize.width) / 2,
+                y: (size - strSize.height) / 2
+            ))
+            return true
+        }
+        image.isTemplate = false
+        return image
     }
 }
