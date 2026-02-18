@@ -42,6 +42,16 @@ final class ClaudeUsageAPI {
     
     
     
+    /// Fetch usage using a provided access token (for MCC integration).
+    /// No keychain reads, no token refresh -- the caller manages the token.
+    func fetchUsage(accessToken: String) async -> Result<RateLimits, UsageFetchError> {
+        guard let data = await callAPI(accessToken: accessToken) else {
+            return .failure(.apiCallFailed)
+        }
+        guard let limits = parseResponse(data) else { return .failure(.parseFailed) }
+        return .success(limits)
+    }
+
     func fetchUsage() async -> Result<RateLimits, UsageFetchError> {
         // Step 1: Get credentials (cache -> keychain -> file)
         guard var creds = getCredentials() else { return .failure(.noCredentials) }
