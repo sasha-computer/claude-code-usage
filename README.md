@@ -72,6 +72,10 @@ graph TD
 - Refreshes every 30 seconds, reads credentials from the macOS Keychain
 - Zero config. If you're logged into Claude Code, it just works.
 
+## ⚠️ Note
+
+> **macOS authentication is a pain.** The OAuth token refresh and Keychain access can be finicky, especially across sleep/wake cycles. If you just want something that works, use [**CodexBar**](https://codexbar.app) by Peter Steinberger instead — it's a polished menu bar app that does the same thing without the headaches.
+
 ## Installation
 
 ### Homebrew (recommended)
